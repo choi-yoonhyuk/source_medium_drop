@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UTM 링크 생성기 (커스텀 드롭다운)</title>
+    <title>UTM 링크 생성기</title>
     <style>
         /* 기본 스타일 */
         body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -17,7 +17,7 @@
         .required { color: red; font-weight: bold; }
         .hidden { display: none !important; } /* 숨김 스타일 */
 
-        /* 커스텀 드롭다운 스타일 */
+        /* 드롭다운 스타일 */
         .custom-dropdown-container { display: inline-block; vertical-align: top; /* top 정렬 */ } /* 컨테이너 추가 */
         .custom-dropdown {
             position: relative;
@@ -147,7 +147,7 @@
                     <div class="custom-dropdown" id="source_dropdown">
                         <div class="dropdown-selected" id="source_selected_value" tabindex="0">-- 선택하세요 --</div>
                         <ul class="dropdown-options hidden" id="source_options_list">
-                            <li class="add-option" id="source_add_option_button">+ Add an option</li>
+                            <li class="add-option" id="source_add_option_button">+ 옵션 추가</li>
                         </ul>
                          <div class="add-option-input hidden" id="source_add_input_container">
                             <input type="text" id="source_add_input" placeholder="입력 후 Enter">
@@ -162,7 +162,7 @@
                     <div class="custom-dropdown" id="medium_dropdown">
                         <div class="dropdown-selected" id="medium_selected_value" tabindex="0">-- 선택하세요 --</div>
                         <ul class="dropdown-options hidden" id="medium_options_list">
-                            <li class="add-option" id="medium_add_option_button">+ Add an option</li>
+                            <li class="add-option" id="medium_add_option_button">+ 옵션 추가</li>
                         </ul>
                          <div class="add-option-input hidden" id="medium_add_input_container">
                             <input type="text" id="medium_add_input" placeholder="입력 후 Enter">
