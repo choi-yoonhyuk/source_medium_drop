@@ -185,202 +185,217 @@
 
 // --- 최윤혁 담당 영역 (드롭박스 구현) ---
 
-    const LS_CUSTOM_SOURCES_KEY = 'customSources';
-    const LS_CUSTOM_MEDIUMS_KEY = 'customMediums';
+const LS_CUSTOM_SOURCES_KEY = 'customSources';
+const LS_CUSTOM_MEDIUMS_KEY = 'customMediums';
+// !!! 여기에 웹에 게시된 CSV URL을 붙여넣으세요 !!!
+const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1106098220&single=true&output=csv'; // 예: 'https://docs.google.com/spreadsheets/d/e/...'
 
-    // 초기화
-    document.addEventListener('DOMContentLoaded', async () => {
-        await renderAllOptions('source'); // Source 옵션 렌더링 (CSV+LocalStorage)
-        await renderAllOptions('medium'); // Medium 옵션 렌더링 (CSV+LocalStorage)
-        setupDropdownInteractions('source'); // Source 드롭다운 이벤트 설정
-        setupDropdownInteractions('medium'); // Medium 드롭다운 이벤트 설정
-        updateFinalURL();
-        // TODO: 이력 로드
+// 초기화 (변경 없음)
+document.addEventListener('DOMContentLoaded', async () => {
+    // 각 타입별로 데이터를 가져와 렌더링 (동일 URL을 두 번 호출하게 됨)
+    await renderAllOptions('source');
+    await renderAllOptions('medium');
+    setupDropdownInteractions('source');
+    setupDropdownInteractions('medium');
+    updateFinalURL();
+    // TODO: 이력 로드
+});
+
+// === Helper Functions ===
+
+// li 요소 생성 함수 (변경 없음)
+function createOptionLi(value, displayText, type) { // displayText 파라미터 추가
+    const li = document.createElement('li');
+    const lowerCaseValue = value.toLowerCase();
+    li.dataset.value = lowerCaseValue; // 실제 사용할 값
+    li.dataset.type = type; // 'default' or 'custom'
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'icon';
+    li.appendChild(iconSpan);
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'option-content';
+    textSpan.textContent = displayText || value; // 표시 텍스트가 있으면 사용, 없으면 value 사용
+    li.appendChild(textSpan);
+
+    if (type === 'custom') {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        li.appendChild(deleteBtn);
+    }
+    return li;
+}
+
+// Google Sheet CSV + LocalStorage (수정됨)
+async function renderAllOptions(type) { // type: 'source' or 'medium'
+    const optionsList = document.getElementById(`${type}_options_list`);
+    const addOptionButton = document.getElementById(`${type}_add_option_button`);
+    optionsList.innerHTML = '';
+    optionsList.appendChild(addOptionButton);
+
+    // 1. Google Sheet CSV 로드 및 기본 옵션 추가
+    try {
+        const response = await fetch(GOOGLE_SHEET_CSV_URL); // CSV URL 사용
+        if (!response.ok) throw new Error(`Google Sheet CSV 로드 오류 (${response.status})`);
+        const csvData = await response.text();
+        const lines = csvData.split('\n').slice(1); // 첫 줄(헤더) 제외
+
+        lines.forEach(line => {
+            // CSV 파싱 (쉼표로 구분, 공백 제거)
+            // 예: "source,google,Google" -> ['source', 'google', 'Google']
+            const columns = line.split(',').map(s => s.trim().replace(/^"|"$/g, '')); // 따옴표 제거 추가
+
+            if (columns.length >= 2) { // 최소 2개 열(구분, Key)이 있는지 확인
+                const csvType = columns[0].toLowerCase(); // 첫번째 열: 구분 (source/medium)
+                const csvKey = columns[1];             // 두번째 열: Key (실제 값)
+                const csvDisplayText = columns[2] || csvKey; // 세번째 열: 표시 텍스트 (없으면 Key 사용)
+
+                // 현재 함수 호출의 type과 CSV의 구분(csvType)이 일치하는 경우에만 추가
+                if (csvType === type && csvKey) {
+                    const li = createOptionLi(csvKey, csvDisplayText, 'default'); // Key와 표시 텍스트 전달
+                    optionsList.insertBefore(li, addOptionButton);
+                }
+            }
+        });
+    } catch (error) {
+        console.error(`${type} Google Sheet 데이터 로딩 오류:`, error);
+        // Optionally alert user or add placeholder message
+    }
+
+    // 2. LocalStorage 로드 및 커스텀 옵션 추가 (기존 로직 유지)
+    const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
+    const customValues = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    // 현재 목록에 있는 값들 (Google Sheet + LocalStorage 중복 방지용)
+    const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value));
+
+    customValues.forEach(value => {
+         // LocalStorage 값은 Key와 표시 텍스트가 동일하다고 가정
+        const lowerCaseValue = value.toLowerCase();
+        if (!existingValues.has(lowerCaseValue)) { // 중복 체크
+            const li = createOptionLi(value, value, 'custom'); // Key와 표시 텍스트 동일하게 전달
+            optionsList.insertBefore(li, addOptionButton);
+            existingValues.add(lowerCaseValue); // Set에도 추가하여 중복 방지 강화
+        }
+    });
+}
+
+// LocalStorage 저장 함수 (li 생성 시 원본 텍스트 저장하도록 수정됨)
+function saveCustomOptionsToStorage(type) {
+    const optionsList = document.getElementById(`${type}_options_list`);
+    const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
+    const customValues = [];
+    optionsList.querySelectorAll('li[data-type="custom"]').forEach(li => {
+        // createOptionLi에서 원본 텍스트를 저장했으므로 그대로 가져옴
+        customValues.push(li.querySelector('.option-content').textContent);
+    });
+    localStorage.setItem(storageKey, JSON.stringify(customValues));
+}
+
+// Dropdown Interaction Setup 함수 (선택 시 표시 텍스트 적용되도록 일부 수정)
+function setupDropdownInteractions(type) {
+    const dropdown = document.getElementById(`${type}_dropdown`);
+    const selectedValueDiv = document.getElementById(`${type}_selected_value`);
+    const optionsList = document.getElementById(`${type}_options_list`);
+    const hiddenInput = document.getElementById(`utm_${type}`); // 여기에는 Key(value) 저장
+    const addOptionButton = document.getElementById(`${type}_add_option_button`);
+    const addInputContainer = document.getElementById(`${type}_add_input_container`);
+    const addInput = document.getElementById(`${type}_add_input`);
+
+    // 드롭다운 열기/닫기 (변경 없음)
+    selectedValueDiv.addEventListener('click', (event) => {
+         event.stopPropagation();
+         closeOtherDropdowns(type);
+         optionsList.classList.toggle('hidden');
+         addInputContainer.classList.add('hidden');
     });
 
-    // === Helper Functions ===
+    // 옵션 리스트 이벤트 처리 (이벤트 위임)
+    optionsList.addEventListener('click', (event) => {
+        event.stopPropagation();
 
-    // li 요소 생성 함수
-    function createOptionLi(value, type) {
-        const li = document.createElement('li');
-        const lowerCaseValue = value.toLowerCase();
-        li.dataset.value = lowerCaseValue;
-        li.dataset.type = type; // 'default' or 'custom'
-
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'icon';
-        li.appendChild(iconSpan);
-
-        const textSpan = document.createElement('span');
-        textSpan.className = 'option-content';
-        textSpan.textContent = value; // 원본 텍스트
-        li.appendChild(textSpan);
-
-        if (type === 'custom') {
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button'; // 중요: submit 방지
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.innerHTML = '&times;'; // 'X' 문자
-            li.appendChild(deleteBtn);
-        }
-        return li;
-    }
-
-    // CSV + LocalStorage
-    async function renderAllOptions(type) {
-        const optionsList = document.getElementById(`${type}_options_list`);
-        const addOptionButton = document.getElementById(`${type}_add_option_button`);
-        optionsList.innerHTML = ''; // 기존 목록 비우기 (Add 버튼 제외)
-        optionsList.appendChild(addOptionButton); // Add 버튼 다시 추가
-
-        // 1. CSV 로드 및 기본 옵션 추가
-        try {
-            const response = await fetch('initial_values.csv');
-            if (!response.ok) throw new Error(`CSV(${response.status})`);
-            const csvData = await response.text();
-            const lines = csvData.split('\n').slice(1);
-
-            lines.forEach(line => {
-                const [csvType, csvValue] = line.split(',').map(s => s.trim());
-                if (csvType && csvValue && csvType.toLowerCase() === type) {
-                    const li = createOptionLi(csvValue, 'default');
-                    // '+ 옵션 추가가' 버튼 앞에 삽입
-                    optionsList.insertBefore(li, addOptionButton);
-                }
-            });
-        } catch (error) {
-            console.error(`${type} CSV 로딩 오류:`, error);
-            // Optionally alert user or add placeholder message
-        }
-
-        // 2. LocalStorage 로드 및 커스텀 옵션 추가
-        const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
-        const customValues = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value)); // 현재 목록 값들 (중복 방지용)
-
-        customValues.forEach(value => {
-                if (!existingValues.has(value.toLowerCase())) { // 중복 체크
-                    const li = createOptionLi(value, 'custom');
-                    optionsList.insertBefore(li, addOptionButton);
-                }
-        });
-    }
-
-    // LocalStorage 저장
-    function saveCustomOptionsToStorage(type) {
-        const optionsList = document.getElementById(`${type}_options_list`);
-        const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
-        const customValues = [];
-        optionsList.querySelectorAll('li[data-type="custom"]').forEach(li => {
-            customValues.push(li.querySelector('.option-content').textContent); // 원본 텍스트 저장
-        });
-        localStorage.setItem(storageKey, JSON.stringify(customValues));
-    }
-
-    // === Dropdown Interaction Setup ===
-    function setupDropdownInteractions(type) {
-        const dropdown = document.getElementById(`${type}_dropdown`);
-        const selectedValueDiv = document.getElementById(`${type}_selected_value`);
-        const optionsList = document.getElementById(`${type}_options_list`);
-        const hiddenInput = document.getElementById(`utm_${type}`);
-        const addOptionButton = document.getElementById(`${type}_add_option_button`);
-        const addInputContainer = document.getElementById(`${type}_add_input_container`);
-        const addInput = document.getElementById(`${type}_add_input`);
-
-        // 드롭다운 열기/닫기
-        selectedValueDiv.addEventListener('click', (event) => {
-            event.stopPropagation(); // 이벤트가 부모 요소나 다른 상위 요소로 전파되는 것을 막기 위해 사용
-            // 다른 드롭다운 닫기
-            closeOtherDropdowns(type);
-            optionsList.classList.toggle('hidden');
-            addInputContainer.classList.add('hidden'); // 추가 입력 필드는 일단 숨김
-        });
-
-        // 옵션 리스트 이벤트 처리 (이벤트 위임)
-        optionsList.addEventListener('click', (event) => {
-            event.stopPropagation(); // 이벤트가 부모 요소나 다른 상위 요소로 전파되는 것을 막기 위해 사용
-
-            // 1. 삭제 버튼 클릭
-            if (event.target.classList.contains('delete-btn')) {
-                const targetLi = event.target.closest('li');
-                if (targetLi && targetLi.dataset.type === 'custom') {
-                    if (confirm(`'${targetLi.querySelector('.option-content').textContent}' 항목을 삭제하시겠습니까?`)) {
-                        // 현재 선택된 값이 삭제되는 값이면 초기화
-                        if (hiddenInput.value === targetLi.dataset.value) {
-                            selectedValueDiv.textContent = '-- 선택하세요 --';
-                            hiddenInput.value = '';
-                        }
-                        targetLi.remove();
-                        saveCustomOptionsToStorage(type);
-                        updateFinalURL(); // URL 즉시 업데이트
+        // 1. 삭제 버튼 클릭 (변경 없음)
+        if (event.target.classList.contains('delete-btn')) {
+            const targetLi = event.target.closest('li');
+            if (targetLi && targetLi.dataset.type === 'custom') {
+                if (confirm(`'${targetLi.querySelector('.option-content').textContent}' 항목을 삭제하시겠습니까?`)) {
+                    if (hiddenInput.value === targetLi.dataset.value) {
+                        selectedValueDiv.textContent = '-- 선택하세요 --';
+                        hiddenInput.value = '';
                     }
+                    targetLi.remove();
+                    saveCustomOptionsToStorage(type);
+                    updateFinalURL();
                 }
             }
-            // 2. "+옵션 추가" 클릭
-            else if (event.target.closest('li') && event.target.closest('li').classList.contains('add-option')) {
-                addInputContainer.classList.remove('hidden');
-                addInput.value = '';
-                addInput.focus();
-            }
-            // 3. 일반 옵션 항목 클릭
-            else if (event.target.closest('li') && event.target.closest('li').dataset.value) {
-                const targetLi = event.target.closest('li');
-                const value = targetLi.dataset.value;
-                const text = targetLi.querySelector('.option-content').textContent;
+        }
+        // 2. "+옵션 추가" 클릭 (변경 없음)
+        else if (event.target.closest('li') && event.target.closest('li').classList.contains('add-option')) {
+             addInputContainer.classList.remove('hidden');
+             addInput.value = '';
+             addInput.focus();
+        }
+        // 3. 일반 옵션 항목 클릭 (수정됨: 표시 텍스트 사용)
+        else if (event.target.closest('li') && event.target.closest('li').dataset.value) {
+            const targetLi = event.target.closest('li');
+            const value = targetLi.dataset.value; // 실제 사용할 Key 값
+            const text = targetLi.querySelector('.option-content').textContent; // 사용자에게 보여줄 표시 텍스트
 
-                selectedValueDiv.textContent = text;
-                hiddenInput.value = value;
-                optionsList.classList.add('hidden');
-                addInputContainer.classList.add('hidden'); // 입력 필드도 숨김
-                updateFinalURL();
-            }
-        });
+            selectedValueDiv.textContent = text; // 선택된 영역에는 표시 텍스트
+            hiddenInput.value = value;           // 숨겨진 input에는 Key 값 저장
+            optionsList.classList.add('hidden');
+            addInputContainer.classList.add('hidden');
+            updateFinalURL();
+        }
+    });
 
-        // 새 옵션 입력 (Enter 키)
-        addInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const newValue = addInput.value.trim();
-                const lowerCaseValue = newValue.toLowerCase();
+    // 새 옵션 입력 (Enter 키) (수정됨: 표시 텍스트 고려)
+    addInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const newValue = addInput.value.trim(); // 사용자가 입력한 값 (표시 텍스트 겸 Key)
+            const lowerCaseValue = newValue.toLowerCase(); // Key로 사용할 소문자 값
 
-                // 유효성 검사
-                if (!newValue) { alert('추가할 값을 입력해주세요.'); return; }
-                if (/[^a-z0-9_\-]/.test(lowerCaseValue)) { alert("값은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다."); return; }
+            // 유효성 검사 (Key 기준)
+            if (!newValue) { alert('추가할 값을 입력해주세요.'); return; }
+            if (/[^a-z0-9_\-]/.test(lowerCaseValue)) { alert("값은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다."); return; }
 
-                // 중복 검사
-                let exists = false;
-                optionsList.querySelectorAll('li[data-value]').forEach(li => {
-                        if(li.dataset.value === lowerCaseValue) exists = true;
-                });
-                if (exists) { alert("이미 존재하는 값입니다."); return; }
+            // 중복 검사 (Key 기준)
+            let exists = false;
+            optionsList.querySelectorAll('li[data-value]').forEach(li => {
+                if(li.dataset.value === lowerCaseValue) exists = true;
+            });
+            if (exists) { alert("이미 존재하는 값입니다."); return; }
 
-                // 새 li 생성 및 추가
-                const newLi = createOptionLi(newValue, 'custom');
-                optionsList.insertBefore(newLi, addOptionButton);
+            // 새 li 생성 및 추가 (Key와 표시 텍스트 동일하게 사용)
+            const newLi = createOptionLi(newValue, newValue, 'custom');
+            optionsList.insertBefore(newLi, addOptionButton);
 
-                // 값 저장 및 UI 업데이트
-                saveCustomOptionsToStorage(type);
-                selectedValueDiv.textContent = newValue; // 새로 추가된 값 표시
-                hiddenInput.value = lowerCaseValue;       // 숨겨진 값 업데이트
-                addInputContainer.classList.add('hidden'); // 입력 필드 숨김
-                optionsList.classList.add('hidden');      // 옵션 목록 숨김
-                updateFinalURL();
-            }
-        });
+            // 값 저장 및 UI 업데이트
+            saveCustomOptionsToStorage(type);
+            selectedValueDiv.textContent = newValue;   // 선택 영역에 표시 텍스트
+            hiddenInput.value = lowerCaseValue;      // 숨겨진 input에 Key 값
+            addInputContainer.classList.add('hidden');
+            optionsList.classList.add('hidden');
+            updateFinalURL();
+        }
+    });
 
-            // 입력 필드 포커스 아웃 시 숨김 (선택적)
-        addInput.addEventListener('blur', () => {
-            // 약간의 딜레이 후 숨김 (다른 요소 클릭 시간 확보)
-                setTimeout(() => {
-                if (!addInputContainer.contains(document.activeElement)) { // 포커스가 컨테이너 밖으로 나갔으면
-                    addInputContainer.classList.add('hidden');
-                }
-                }, 150);
-        });
-    }
+     // 입력 필드 포커스 아웃 시 숨김 (변경 없음)
+    addInput.addEventListener('blur', () => {
+         setTimeout(() => {
+             if (!addInputContainer.contains(document.activeElement)) {
+                 addInputContainer.classList.add('hidden');
+             }
+         }, 150);
+    });
+}
 
-    // 다른 드롭다운 닫기 헬퍼
-    function closeOtherDropdowns(currentType) {
+
+  // 다른 드롭다운 닫기 헬퍼
+  function closeOtherDropdowns(currentType) {
         const types = ['source', 'medium'];
         types.forEach(type => {
             if (type !== currentType) {
@@ -389,6 +404,7 @@
             }
         });
     }
+
 
     // 외부 클릭 시 모든 드롭다운 닫기
     document.addEventListener('click', (event) => {
