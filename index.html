@@ -393,6 +393,19 @@ function setupDropdownInteractions(type) {
     });
 }
 
+
+  // 다른 드롭다운 닫기 헬퍼
+  function closeOtherDropdowns(currentType) {
+        const types = ['source', 'medium'];
+        types.forEach(type => {
+            if (type !== currentType) {
+                document.getElementById(`${type}_options_list`).classList.add('hidden');
+                document.getElementById(`${type}_add_input_container`).classList.add('hidden');
+            }
+        });
+    }
+
+
     // 외부 클릭 시 모든 드롭다운 닫기
     document.addEventListener('click', (event) => {
         const sourceDropdown = document.getElementById('source_dropdown');
