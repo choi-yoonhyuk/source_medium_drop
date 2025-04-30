@@ -145,7 +145,7 @@
             <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
             <input type="text" id="page_url" name="page_url" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
 
-            <label for="utm_source">UTM Source <span class="required">(필수)</span>:</label>
+            <label for="source">UTM Source <span class="required">(필수)</span>:</label> {/* Label for 변경 */}
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="source_dropdown">
                     <div class="dropdown-selected" id="source_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -156,11 +156,11 @@
                         <input type="text" id="source_add_input" placeholder="입력 후 Enter">
                     </div>
                 </div>
-                <input type="hidden" id="source" name="utm_source" required> {/* ID를 'source'로 변경 */ }
+                <input type="hidden" id="source" name="utm_source" required> {/* ID를 'source'로 사용 */}
             </div>
             <br><br>
 
-            <label for="utm_medium">UTM Medium <span class="required">(필수)</span>:</label>
+            <label for="medium">UTM Medium <span class="required">(필수)</span>:</label> {/* Label for 변경 */}
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="medium_dropdown">
                     <div class="dropdown-selected" id="medium_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -171,7 +171,7 @@
                         <input type="text" id="medium_add_input" placeholder="입력 후 Enter">
                     </div>
                 </div>
-                <input type="hidden" id="medium" name="utm_medium" required> {/* ID를 'medium'으로 변경 */ }
+                <input type="hidden" id="medium" name="utm_medium" required> {/* ID를 'medium'으로 사용 */}
             </div>
             <br><br>
 
@@ -179,10 +179,10 @@
             <fieldset style="border:1px solid #ccc; padding:10px;">
                 <legend>UTM Campaign 구성</legend>
 
-                <label>날짜 <span class="required">(필수)</span>:</label>
+                <label for="campaign_date">날짜 <span class="required">(필수)</span>:</label> {/* Label for 추가 */}
                 <input type="text" id="campaign_date" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br>
 
-                <label>광고타입 <span class="required">(필수)</span>:</label>
+                <label for="ad_type">광고타입 <span class="required">(필수)</span>:</label> {/* Label for 추가 */}
                 <div class="custom-dropdown-container">
                     <div class="custom-dropdown" id="ad_type_dropdown">
                         <div class="dropdown-selected" id="ad_type_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -197,7 +197,7 @@
                 </div>
                 <br><br>
 
-                <label>캠페인목표:</label>
+                <label for="campaign_goal">캠페인목표:</label> {/* Label for 추가 */}
                 <div class="custom-dropdown-container">
                     <div class="custom-dropdown" id="campaign_goal_dropdown">
                         <div class="dropdown-selected" id="campaign_goal_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -212,9 +212,9 @@
                 </div>
                 <br><br>
 
-                <label>기획전종류:</label>
+                <label for="event_type">기획전종류:</label> {/* Label for 추가 */}
                  <div class="custom-dropdown-container">
-                    <div class="custom-dropdown" id="event_type_dropdown"> {/* ID를 event_type으로 */}
+                    <div class="custom-dropdown" id="event_type_dropdown">
                         <div class="dropdown-selected" id="event_type_selected_value" tabindex="0">-- 선택하세요 --</div>
                         <ul class="dropdown-options hidden" id="event_type_options_list">
                             <li class="add-option" id="event_type_add_option_button">+ 옵션 추가</li>
@@ -223,13 +223,13 @@
                             <input type="text" id="event_type_add_input" placeholder="입력 후 Enter">
                         </div>
                     </div>
-                    <input type="hidden" id="event_type" name="event_type"> {/* ID를 event_type으로 */}
+                    <input type="hidden" id="event_type" name="event_type">
                 </div>
                 <br><br>
 
-                <label>상품카테고리:</label>
+                <label for="product_category">상품카테고리:</label> {/* Label for 추가 */}
                 <div class="custom-dropdown-container">
-                    <div class="custom-dropdown" id="product_category_dropdown"> {/* ID를 product_category로 */}
+                    <div class="custom-dropdown" id="product_category_dropdown">
                         <div class="dropdown-selected" id="product_category_selected_value" tabindex="0">-- 선택하세요 --</div>
                         <ul class="dropdown-options hidden" id="product_category_options_list">
                             <li class="add-option" id="product_category_add_option_button">+ 옵션 추가</li>
@@ -238,11 +238,11 @@
                             <input type="text" id="product_category_add_input" placeholder="입력 후 Enter">
                         </div>
                     </div>
-                    <input type="hidden" id="product_category" name="product_category"> {/* ID를 product_category로 */}
+                    <input type="hidden" id="product_category" name="product_category">
                 </div>
                 <br><br>
 
-                <label>광고타겟:</label>
+                <label for="ad_target">광고타겟:</label> {/* Label for 추가 */}
                 <div class="custom-dropdown-container">
                     <div class="custom-dropdown" id="ad_target_dropdown">
                         <div class="dropdown-selected" id="ad_target_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -257,7 +257,7 @@
                 </div>
                 <br><br>
 
-                <label>소재타입:</label>
+                <label for="creative_type">소재타입:</label> {/* Label for 추가 */}
                 <div class="custom-dropdown-container">
                     <div class="custom-dropdown" id="creative_type_dropdown">
                         <div class="dropdown-selected" id="creative_type_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -272,7 +272,7 @@
                 </div>
                 <br><br>
 
-                <label>기기카테고리 <span class="required">(필수)</span>:</label>
+                <label for="device_type">기기카테고리 <span class="required">(필수)</span>:</label> {/* Label for 추가 */}
                  <div class="custom-dropdown-container">
                     <div class="custom-dropdown" id="device_type_dropdown">
                         <div class="dropdown-selected" id="device_type_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -291,9 +291,9 @@
             <fieldset style="border:1px solid #ccc; padding:10px;">
                 <legend>UTM Content 구성</legend>
 
-                <label>목표행동:</label>
+                <label for="content_action">목표행동:</label> {/* Label for 추가 */}
                  <div class="custom-dropdown-container">
-                    <div class="custom-dropdown" id="content_action_dropdown"> {/* ID를 content_action으로 */}
+                    <div class="custom-dropdown" id="content_action_dropdown">
                         <div class="dropdown-selected" id="content_action_selected_value" tabindex="0">-- 선택하세요 --</div>
                         <ul class="dropdown-options hidden" id="content_action_options_list">
                             <li class="add-option" id="content_action_add_option_button">+ 옵션 추가</li>
@@ -302,14 +302,14 @@
                             <input type="text" id="content_action_add_input" placeholder="입력 후 Enter">
                         </div>
                     </div>
-                    <input type="hidden" id="content_action" name="content_action"> {/* ID를 content_action으로 */}
+                    <input type="hidden" id="content_action" name="content_action">
                 </div>
                 <br><br>
 
-                <label>추가기입사항:</label>
+                <label for="content_detail">추가기입사항:</label> {/* Label for 추가 */}
                 <input type="text" id="content_detail" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br>
 
-                <label>버전:</label>
+                <label for="content_version">버전:</label> {/* Label for 추가 */}
                 <input type="text" id="content_version" placeholder="v1" oninput="updateFinalURL()"><br><br>
             </fieldset>
 
@@ -341,10 +341,8 @@
 // --- 설정값 ---
 const LS_KEY_PREFIX = 'utmGenerator_'; // LocalStorage 키 접두사
 // !!! 여기에 웹에 게시된 CSV URL을 붙여넣으세요 !!!
-// CSV 형식: 첫 행은 헤더, 각 행은 데이터
-// 예시 헤더: source,medium,utm_campaign_ad_type,utm_campaign_goal,...
-// (첫번째/두번째 열이 source/medium 구분용이 아님)
-const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv'; // 실제 CSV URL로 변경하세요
+// CSV 형식: 첫 행은 헤더, 두번째 행은 "type", 세번째 행부터 실제 데이터
+const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgdSa5ea9AK_G2C8hP5LRMEvUYMJxVFcmbM5RtJYWYNvQ6TMM7nE--RMLOgW0lRlEel6Gzbsc7gbl-/pub?gid=371880271&single=true&output=csv'; // 실제 CSV URL로 변경하세요
 
 // 드롭다운으로 만들 필드 ID 목록 (숨겨진 input의 ID 기준)
 const dropdownBaseIds = [
@@ -352,12 +350,12 @@ const dropdownBaseIds = [
     'medium',
     'ad_type',
     'campaign_goal',
-    'event_type',       // HTML ID 기준
-    'product_category', // HTML ID 기준
+    'event_type',
+    'product_category',
     'ad_target',
     'creative_type',
     'device_type',
-    'content_action'    // HTML ID 기준
+    'content_action'
 ];
 
 // HTML 필드 ID와 CSV 컬럼 헤더 매핑
@@ -371,7 +369,7 @@ const columnHeaderMap = {
     'ad_target': 'ad_target', // CSV에 이 헤더가 있는지 확인 필요
     'creative_type': 'utm_campaign_creative_type',
     'device_type': 'utm_campaign_device_type',
-    'content_action': 'utm_content_goal_action' // HTML ID <-> CSV Header
+    'content_action': 'utm_content_content_action' // <--- 이름 변경됨
 };
 
 // --- 초기화 ---
@@ -417,7 +415,7 @@ function createOptionLi(value, displayText, type) {
     return li;
 }
 
-// Google Sheet CSV + LocalStorage 옵션 렌더링 (수정됨)
+// Google Sheet CSV + LocalStorage 옵션 렌더링 (수정됨: i=2 부터 시작)
 async function renderAllOptions(baseId) {
     const optionsList = document.getElementById(`${baseId}_options_list`);
     const addOptionButton = document.getElementById(`${baseId}_add_option_button`);
@@ -439,14 +437,15 @@ async function renderAllOptions(baseId) {
             const csvData = await response.text();
             const lines = csvData.split(/\r?\n/); // 다양한 줄바꿈 처리
 
-            if (lines.length > 0) {
+            if (lines.length > 1) { // 헤더와 'type' 행 포함 최소 2줄 이상 필요
                 const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
                 const columnIndex = headers.findIndex(header => header === targetHeader);
 
                 if (columnIndex === -1) {
                     console.warn(`Column header '${targetHeader}' not found in CSV for baseId '${baseId}'.`);
                 } else {
-                    for (let i = 1; i < lines.length; i++) {
+                    // *** 데이터 행 처리 시작점을 인덱스 2 (세 번째 줄)로 변경 ***
+                    for (let i = 2; i < lines.length; i++) {
                         // 각 라인을 파싱하되, 쉼표가 값 안에 포함된 경우 고려 (간단 처리)
                         // 완벽한 CSV 파싱은 라이브러리 사용 권장
                          const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
@@ -454,12 +453,14 @@ async function renderAllOptions(baseId) {
 
                         if (columns.length > columnIndex) {
                             const value = columns[columnIndex];
-                            if (value) {
+                            if (value) { // 값이 비어있지 않으면 Set에 추가 (자동 중복 제거)
                                 defaultOptions.add(value);
                             }
                         }
                     }
                 }
+            } else {
+                 console.warn(`CSV for ${baseId} has less than 2 lines.`);
             }
         } catch (error) {
             console.error(`Error loading or parsing CSV for ${baseId}:`, error);
@@ -479,7 +480,7 @@ async function renderAllOptions(baseId) {
     // 2. LocalStorage 로드 및 커스텀 옵션 추가
     const storageKey = `${LS_KEY_PREFIX}${baseId}`; // 동적 키 생성
     const customValues = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value));
+    const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value)); // 현재 목록 값
 
     customValues.forEach(value => {
         const lowerCaseValue = String(value).toLowerCase();
@@ -742,11 +743,13 @@ function updateFinalURL() {
 
     if (utmSource) params.push(`utm_source=${encodeURIComponent(utmSource)}`);
     if (utmMedium) params.push(`utm_medium=${encodeURIComponent(utmMedium)}`);
-    if (utmCampaign) params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`); // 항상 포함 (필수값 기반)
+    // utmCampaign은 필수값 기반이므로 항상 존재한다고 가정하고 추가
+    if (utmCampaign) params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`);
     if (utmContent && utmContent !== "N") params.push(`utm_content=${encodeURIComponent(utmContent)}`); // 모든 부분이 N일 경우 제외
     if (utmTerm) params.push(`utm_term=${encodeURIComponent(utmTerm)}`);
 
     if (params.length > 0) {
+        // 페이지 URL에 이미 파라미터가 있는지 확인
         finalURL += (pageUrl.includes('?') ? '&' : '?') + params.join('&');
     }
 
@@ -754,15 +757,14 @@ function updateFinalURL() {
 }
 
 // --- 이력 관리 함수 (필요시 구현) ---
-// function saveHistory() { ... }
-// function loadHistory() { ... }
+// function saveHistory() { /* ... */ }
+// function loadHistory() { /* ... */ }
 
 // --- CSV 파싱 보조 함수 (선택적, 간단 버전) ---
 // function parseCsvLine(line) {
-//   // 더 복잡한 CSV (따옴표 안의 쉼표 등) 처리가 필요하면 정규식 또는 라이브러리 사용
-//   return line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+//   // 더 복잡한 CSV (따옴표 안의 쉼표 등) 처리가 필요하면 정규식 또는 라이브러리 사용
+//   return line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
 // }
-
 
 </script>
 </body>
