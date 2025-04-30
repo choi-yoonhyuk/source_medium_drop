@@ -22,7 +22,9 @@
     .custom-dropdown {
         position: relative;
         display: inline-block;
-        min-width: 200px;
+        min-width: 200px; /* 최소 너비 유지 */
+        width: auto; /* 자동 너비 */
+        max-width: 300px; /* 최대 너비 제한 (선택적) */
         border: 1px solid #ccc;
         border-radius: 4px;
         background-color: #fff;
@@ -34,6 +36,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: block; /* 블록 요소로 변경 */
     }
     .dropdown-selected::after { /* 화살표 아이콘 */
         content: '▼';
@@ -67,16 +70,16 @@
         display: flex; /* Flexbox 사용 */
         align-items: center; /* 수직 중앙 정렬 */
         justify-content: space-between; /* 양쪽 정렬 */
-            white-space: nowrap; /* 줄바꿈 방지 */
+        white-space: nowrap; /* 줄바꿈 방지 */
     }
     .dropdown-options li:hover {
         background-color: #f0f0f0;
     }
     .dropdown-options li .option-content { /* 텍스트 영역 */
-            flex-grow: 1; /* 남은 공간 차지 */
-            margin-left: 8px; /* 아이콘과 간격 */
-            overflow: hidden;
-            text-overflow: ellipsis;
+        flex-grow: 1; /* 남은 공간 차지 */
+        margin-left: 8px; /* 아이콘과 간격 */
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .dropdown-options li .icon { /* 아이콘 스타일 (간단 예시) */
         display: inline-block;
@@ -133,12 +136,12 @@
         <table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;">
             <thead><tr><th colspan="2">UTM 네이밍 규칙</th></tr></thead>
             <tbody><tr><td>공통 규칙</td><td><ul><li>띄어쓰기 금지</li><li>구분자: 언더스코어('_') 및 하이픈('-') 사용</li><li>영문 네이밍: 소문자만 사용</li><li>특수문자 사용 금지 (&amp;, ?, #, ., /, \ 등)</li></ul></td></tr><tr><td>캠페인 규칙</td><td><ul><li>구성: 날짜_광고타입_캠페인목표_기획전종류_상품카테고리_광고타겟_소재타입_기기카테고리</li><li>없으면 'N'으로 채움</li><li><span class="required">필수 항목: 날짜, 광고타입, 기기카테고리</span></li></ul></td></tr><tr><td>콘텐츠 규칙</td><td><ul><li>목표행동, 추가기입사항, 버전 중 하나라도 입력되면 해당 값으로 조합</li><li>입력되지 않으면 'N'으로 처리</li></ul></td></tr></tbody>
-            </table>
+        </table>
         <br>
     </div>
 
     <div class="dv3">
-            <form action="http://localhost:5677/webhook/test" method="POST" id="utmForm" onsubmit="return combineUTMValues()">
+        <form action="http://localhost:5677/webhook/test" method="POST" id="utmForm" onsubmit="return combineUTMValues()">
             <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
             <input type="text" id="page_url" name="page_url" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
 
@@ -149,65 +152,250 @@
                     <ul class="dropdown-options hidden" id="source_options_list">
                         <li class="add-option" id="source_add_option_button">+ 옵션 추가</li>
                     </ul>
-                        <div class="add-option-input hidden" id="source_add_input_container">
+                    <div class="add-option-input hidden" id="source_add_input_container">
                         <input type="text" id="source_add_input" placeholder="입력 후 Enter">
                     </div>
                 </div>
-                <input type="hidden" id="utm_source" name="utm_source" required>
+                <input type="hidden" id="source" name="utm_source" required> {/* ID를 'source'로 변경 */ }
             </div>
             <br><br>
 
             <label for="utm_medium">UTM Medium <span class="required">(필수)</span>:</label>
-                <div class="custom-dropdown-container">
+            <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="medium_dropdown">
                     <div class="dropdown-selected" id="medium_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="medium_options_list">
                         <li class="add-option" id="medium_add_option_button">+ 옵션 추가</li>
                     </ul>
-                        <div class="add-option-input hidden" id="medium_add_input_container">
+                    <div class="add-option-input hidden" id="medium_add_input_container">
                         <input type="text" id="medium_add_input" placeholder="입력 후 Enter">
                     </div>
                 </div>
-                <input type="hidden" id="utm_medium" name="utm_medium" required>
+                <input type="hidden" id="medium" name="utm_medium" required> {/* ID를 'medium'으로 변경 */ }
             </div>
             <br><br>
 
 
-            <fieldset style="border:1px solid #ccc; padding:10px;"> <legend>UTM Campaign 구성</legend> <label>날짜 <span class="required">(필수)</span>:</label><input type="text" id="campaign_date" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br> <label>광고타입 <span class="required">(필수)</span>:</label><input type="text" id="ad_type" placeholder="display" oninput="updateFinalURL()" required><br><br> <label>캠페인목표:</label><input type="text" id="campaign_goal" placeholder="awareness" oninput="updateFinalURL()"><br><br> <label>기획전종류:</label><input type="text" id="event_type" placeholder="spring_sale" oninput="updateFinalURL()"><br><br> <label>상품카테고리:</label><input type="text" id="product_category" placeholder="shoes" oninput="updateFinalURL()"><br><br> <label>광고타겟:</label><input type="text" id="ad_target" placeholder="women" oninput="updateFinalURL()"><br><br> <label>소재타입:</label><input type="text" id="creative_type" placeholder="banner" oninput="updateFinalURL()"><br><br> <label>기기카테고리 <span class="required">(필수)</span>:</label><input type="text" id="device_type" placeholder="mobile" oninput="updateFinalURL()" required><br><br> </fieldset> <fieldset style="border:1px solid #ccc; padding:10px;"> <legend>UTM Content 구성</legend> <label>목표행동:</label><input type="text" id="content_action" placeholder="click" oninput="updateFinalURL()"><br><br> <label>추가기입사항:</label><input type="text" id="content_detail" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> <label>버전:</label><input type="text" id="content_version" placeholder="v1" oninput="updateFinalURL()"><br><br> </fieldset> <label for="utm_term">UTM Term (선택):</label><input type="text" id="utm_term" name="utm_term" placeholder="shoes" oninput="updateFinalURL()"><br><br> <input type="hidden" id="utm_campaign" name="utm_campaign" required><input type="hidden" id="utm_content" name="utm_content"> <label for="final_url">최종 URL:</label><input type="text" id="final_url" disabled style="width:100%; font-family:monospace;"><button type="submit">제출</button>
+            <fieldset style="border:1px solid #ccc; padding:10px;">
+                <legend>UTM Campaign 구성</legend>
+
+                <label>날짜 <span class="required">(필수)</span>:</label>
+                <input type="text" id="campaign_date" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br>
+
+                <label>광고타입 <span class="required">(필수)</span>:</label>
+                <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="ad_type_dropdown">
+                        <div class="dropdown-selected" id="ad_type_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="ad_type_options_list">
+                            <li class="add-option" id="ad_type_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="ad_type_add_input_container">
+                            <input type="text" id="ad_type_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="ad_type" name="ad_type" required>
+                </div>
+                <br><br>
+
+                <label>캠페인목표:</label>
+                <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="campaign_goal_dropdown">
+                        <div class="dropdown-selected" id="campaign_goal_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="campaign_goal_options_list">
+                            <li class="add-option" id="campaign_goal_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="campaign_goal_add_input_container">
+                            <input type="text" id="campaign_goal_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="campaign_goal" name="campaign_goal">
+                </div>
+                <br><br>
+
+                <label>기획전종류:</label>
+                 <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="event_type_dropdown"> {/* ID를 event_type으로 */}
+                        <div class="dropdown-selected" id="event_type_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="event_type_options_list">
+                            <li class="add-option" id="event_type_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="event_type_add_input_container">
+                            <input type="text" id="event_type_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="event_type" name="event_type"> {/* ID를 event_type으로 */}
+                </div>
+                <br><br>
+
+                <label>상품카테고리:</label>
+                <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="product_category_dropdown"> {/* ID를 product_category로 */}
+                        <div class="dropdown-selected" id="product_category_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="product_category_options_list">
+                            <li class="add-option" id="product_category_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="product_category_add_input_container">
+                            <input type="text" id="product_category_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="product_category" name="product_category"> {/* ID를 product_category로 */}
+                </div>
+                <br><br>
+
+                <label>광고타겟:</label>
+                <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="ad_target_dropdown">
+                        <div class="dropdown-selected" id="ad_target_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="ad_target_options_list">
+                            <li class="add-option" id="ad_target_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="ad_target_add_input_container">
+                            <input type="text" id="ad_target_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="ad_target" name="ad_target">
+                </div>
+                <br><br>
+
+                <label>소재타입:</label>
+                <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="creative_type_dropdown">
+                        <div class="dropdown-selected" id="creative_type_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="creative_type_options_list">
+                            <li class="add-option" id="creative_type_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="creative_type_add_input_container">
+                            <input type="text" id="creative_type_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="creative_type" name="creative_type">
+                </div>
+                <br><br>
+
+                <label>기기카테고리 <span class="required">(필수)</span>:</label>
+                 <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="device_type_dropdown">
+                        <div class="dropdown-selected" id="device_type_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="device_type_options_list">
+                            <li class="add-option" id="device_type_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="device_type_add_input_container">
+                            <input type="text" id="device_type_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="device_type" name="device_type" required>
+                </div>
+                <br><br>
+            </fieldset>
+
+            <fieldset style="border:1px solid #ccc; padding:10px;">
+                <legend>UTM Content 구성</legend>
+
+                <label>목표행동:</label>
+                 <div class="custom-dropdown-container">
+                    <div class="custom-dropdown" id="content_action_dropdown"> {/* ID를 content_action으로 */}
+                        <div class="dropdown-selected" id="content_action_selected_value" tabindex="0">-- 선택하세요 --</div>
+                        <ul class="dropdown-options hidden" id="content_action_options_list">
+                            <li class="add-option" id="content_action_add_option_button">+ 옵션 추가</li>
+                        </ul>
+                        <div class="add-option-input hidden" id="content_action_add_input_container">
+                            <input type="text" id="content_action_add_input" placeholder="입력 후 Enter">
+                        </div>
+                    </div>
+                    <input type="hidden" id="content_action" name="content_action"> {/* ID를 content_action으로 */}
+                </div>
+                <br><br>
+
+                <label>추가기입사항:</label>
+                <input type="text" id="content_detail" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br>
+
+                <label>버전:</label>
+                <input type="text" id="content_version" placeholder="v1" oninput="updateFinalURL()"><br><br>
+            </fieldset>
+
+            <label for="utm_term">UTM Term (선택):</label>
+            <input type="text" id="utm_term" name="utm_term" placeholder="shoes" oninput="updateFinalURL()"><br><br>
+
+            {/* UTM Campaign / Content 조합 결과 (숨김) */}
+            <input type="hidden" id="utm_campaign" name="utm_campaign" required>
+            <input type="hidden" id="utm_content" name="utm_content">
+
+            <label for="final_url">최종 URL:</label>
+            <input type="text" id="final_url" disabled style="width:100%; font-family:monospace;">
+            <button type="submit">제출</button>
         </form>
 
-            <div id="historyTableContainer" style="margin-top: 30px;"><h2>생성 이력</h2><table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;" id="historyTable"><thead><tr><th>생성일시</th><th>Source</th><th>Medium</th><th>Campaign</th><th>Content</th><th>Term</th><th>단축 URL</th><th>원본 URL</th></tr></thead><tbody></tbody></table></div>
+        <div id="historyTableContainer" style="margin-top: 30px;">
+            <h2>생성 이력</h2>
+            <table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;" id="historyTable">
+                <thead><tr><th>생성일시</th><th>Source</th><th>Medium</th><th>Campaign</th><th>Content</th><th>Term</th><th>단축 URL</th><th>원본 URL</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
     </div>
 </div>
 
 <script>
 
-// --- 최윤혁 담당 영역 (드롭박스 구현) ---
-
-const LS_CUSTOM_SOURCES_KEY = 'customSources';
-const LS_CUSTOM_MEDIUMS_KEY = 'customMediums';
+// --- 설정값 ---
+const LS_KEY_PREFIX = 'utmGenerator_'; // LocalStorage 키 접두사
 // !!! 여기에 웹에 게시된 CSV URL을 붙여넣으세요 !!!
-const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgdSa5ea9AK_G2C8hP5LRMEvUYMJxVFcmbM5RtJYWYNvQ6TMM7nE--RMLOgW0lRlEel6Gzbsc7gbl-/pub?gid=371880271&single=true&output=csv'; // 예: 'https://docs.google.com/spreadsheets/d/e/...'
+// CSV 형식: 첫 행은 헤더, 각 행은 데이터
+// 예시 헤더: source,medium,utm_campaign_ad_type,utm_campaign_goal,...
+// (첫번째/두번째 열이 source/medium 구분용이 아님)
+const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv'; // 실제 CSV URL로 변경하세요
 
-// 초기화 (변경 없음)
+// 드롭다운으로 만들 필드 ID 목록 (숨겨진 input의 ID 기준)
+const dropdownBaseIds = [
+    'source',
+    'medium',
+    'ad_type',
+    'campaign_goal',
+    'event_type',       // HTML ID 기준
+    'product_category', // HTML ID 기준
+    'ad_target',
+    'creative_type',
+    'device_type',
+    'content_action'    // HTML ID 기준
+];
+
+// HTML 필드 ID와 CSV 컬럼 헤더 매핑
+const columnHeaderMap = {
+    'source': 'source',
+    'medium': 'medium',
+    'ad_type': 'utm_campaign_ad_type',
+    'campaign_goal': 'utm_campaign_goal',
+    'event_type': 'utm_campaign_promo_type', // HTML ID <-> CSV Header
+    'product_category': 'utm_campaign_product_cate', // HTML ID <-> CSV Header
+    'ad_target': 'ad_target', // CSV에 이 헤더가 있는지 확인 필요
+    'creative_type': 'utm_campaign_creative_type',
+    'device_type': 'utm_campaign_device_type',
+    'content_action': 'utm_content_goal_action' // HTML ID <-> CSV Header
+};
+
+// --- 초기화 ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // 각 타입별로 데이터를 가져와 렌더링 (동일 URL을 두 번 호출하게 됨)
-    await renderAllOptions('source');
-    await renderAllOptions('medium');
-    setupDropdownInteractions('source');
-    setupDropdownInteractions('medium');
-    updateFinalURL();
-    // TODO: 이력 로드
+    for (const baseId of dropdownBaseIds) {
+        try {
+            await renderAllOptions(baseId); // 옵션 렌더링 (CSV 로드 포함)
+            setupDropdownInteractions(baseId); // 이벤트 리스너 설정
+        } catch (error) {
+            console.error(`Error initializing dropdown for ${baseId}:`, error);
+        }
+    }
+    updateFinalURL(); // 초기 URL 업데이트
+    // TODO: 이력 로드 (필요시 구현)
+    // loadHistory();
 });
 
 // === Helper Functions ===
 
-// li 요소 생성 함수 (변경 없음)
-function createOptionLi(value, displayText, type) { // displayText 파라미터 추가
+// li 요소 생성 함수
+function createOptionLi(value, displayText, type) {
     const li = document.createElement('li');
-    const lowerCaseValue = value.toLowerCase();
-    li.dataset.value = lowerCaseValue; // 실제 사용할 값
+    const lowerCaseValue = String(value).toLowerCase(); // 값은 소문자 Key로 사용
+    li.dataset.value = lowerCaseValue;
     li.dataset.type = type; // 'default' or 'custom'
 
     const iconSpan = document.createElement('span');
@@ -216,7 +404,7 @@ function createOptionLi(value, displayText, type) { // displayText 파라미터 
 
     const textSpan = document.createElement('span');
     textSpan.className = 'option-content';
-    textSpan.textContent = displayText || value; // 표시 텍스트가 있으면 사용, 없으면 value 사용
+    textSpan.textContent = displayText || value; // 표시 텍스트
     li.appendChild(textSpan);
 
     if (type === 'custom') {
@@ -229,275 +417,352 @@ function createOptionLi(value, displayText, type) { // displayText 파라미터 
     return li;
 }
 
-// Google Sheet CSV + LocalStorage (수정됨)
-async function renderAllOptions(type) { // type: 'source' or 'medium'
-    const optionsList = document.getElementById(`${type}_options_list`);
-    const addOptionButton = document.getElementById(`${type}_add_option_button`);
-    optionsList.innerHTML = '';
-    optionsList.appendChild(addOptionButton);
+// Google Sheet CSV + LocalStorage 옵션 렌더링 (수정됨)
+async function renderAllOptions(baseId) {
+    const optionsList = document.getElementById(`${baseId}_options_list`);
+    const addOptionButton = document.getElementById(`${baseId}_add_option_button`);
+    if (!optionsList || !addOptionButton) {
+        // console.warn(`Dropdown elements not found for baseId: ${baseId}`);
+        return; // 해당 ID 요소가 없으면 함수 종료
+    }
+    optionsList.innerHTML = ''; // 기존 목록 초기화
+    optionsList.appendChild(addOptionButton); // "+ 옵션 추가" 버튼 다시 추가
 
-    // 1. Google Sheet CSV 로드 및 기본 옵션 추가
-    try {
-        const response = await fetch(GOOGLE_SHEET_CSV_URL); // CSV URL 사용
-        if (!response.ok) throw new Error(`Google Sheet CSV 로드 오류 (${response.status})`);
-        const csvData = await response.text();
-        const lines = csvData.split('\n').slice(1); // 첫 줄(헤더) 제외
+    const defaultOptions = new Set(); // 중복 제거 및 기본 옵션 저장용 Set
+    const targetHeader = columnHeaderMap[baseId]; // 매핑된 CSV 헤더 이름 가져오기
 
-        lines.forEach(line => {
-            // CSV 파싱 (쉼표로 구분, 공백 제거)
-            // 예: "source,google,Google" -> ['source', 'google', 'Google']
-            const columns = line.split(',').map(s => s.trim().replace(/^"|"$/g, '')); // 따옴표 제거 추가
+    // 1. Google Sheet CSV 로드 및 해당 열(Column)의 고유 값 추출
+    if (targetHeader) { // 매핑된 헤더가 있을 경우에만 CSV 처리
+        try {
+            const response = await fetch(GOOGLE_SHEET_CSV_URL);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const csvData = await response.text();
+            const lines = csvData.split(/\r?\n/); // 다양한 줄바꿈 처리
 
-            if (columns.length >= 2) { // 최소 2개 열(구분, Key)이 있는지 확인
-                const csvType = columns[0].toLowerCase(); // 첫번째 열: 구분 (source/medium)
-                const csvKey = columns[1];             // 두번째 열: Key (실제 값)
-                const csvDisplayText = columns[2] || csvKey; // 세번째 열: 표시 텍스트 (없으면 Key 사용)
+            if (lines.length > 0) {
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const columnIndex = headers.findIndex(header => header === targetHeader);
 
-                // 현재 함수 호출의 type과 CSV의 구분(csvType)이 일치하는 경우에만 추가
-                if (csvType === type && csvKey) {
-                    const li = createOptionLi(csvKey, csvDisplayText, 'default'); // Key와 표시 텍스트 전달
-                    optionsList.insertBefore(li, addOptionButton);
+                if (columnIndex === -1) {
+                    console.warn(`Column header '${targetHeader}' not found in CSV for baseId '${baseId}'.`);
+                } else {
+                    for (let i = 1; i < lines.length; i++) {
+                        // 각 라인을 파싱하되, 쉼표가 값 안에 포함된 경우 고려 (간단 처리)
+                        // 완벽한 CSV 파싱은 라이브러리 사용 권장
+                         const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+                         //const columns = parseCsvLine(lines[i]); // 더 강력한 파서 필요 시
+
+                        if (columns.length > columnIndex) {
+                            const value = columns[columnIndex];
+                            if (value) {
+                                defaultOptions.add(value);
+                            }
+                        }
+                    }
                 }
             }
-        });
-    } catch (error) {
-        console.error(`${type} Google Sheet 데이터 로딩 오류:`, error);
-        // Optionally alert user or add placeholder message
+        } catch (error) {
+            console.error(`Error loading or parsing CSV for ${baseId}:`, error);
+            // 사용자에게 오류 메시지 표시 등 추가 처리 가능
+        }
+    } else {
+         console.warn(`No CSV header mapping found for baseId '${baseId}'. Skipping CSV load.`);
     }
 
-    // 2. LocalStorage 로드 및 커스텀 옵션 추가 (기존 로직 유지)
-    const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
+
+    // Set에 저장된 고유 값들로 기본 옵션 li 생성
+    defaultOptions.forEach(value => {
+        const li = createOptionLi(value, value, 'default');
+        optionsList.insertBefore(li, addOptionButton);
+    });
+
+    // 2. LocalStorage 로드 및 커스텀 옵션 추가
+    const storageKey = `${LS_KEY_PREFIX}${baseId}`; // 동적 키 생성
     const customValues = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    // 현재 목록에 있는 값들 (Google Sheet + LocalStorage 중복 방지용)
     const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value));
 
     customValues.forEach(value => {
-         // LocalStorage 값은 Key와 표시 텍스트가 동일하다고 가정
-        const lowerCaseValue = value.toLowerCase();
-        if (!existingValues.has(lowerCaseValue)) { // 중복 체크
-            const li = createOptionLi(value, value, 'custom'); // Key와 표시 텍스트 동일하게 전달
+        const lowerCaseValue = String(value).toLowerCase();
+        if (!existingValues.has(lowerCaseValue)) {
+            const li = createOptionLi(value, value, 'custom');
             optionsList.insertBefore(li, addOptionButton);
-            existingValues.add(lowerCaseValue); // Set에도 추가하여 중복 방지 강화
+            existingValues.add(lowerCaseValue);
         }
     });
 }
 
-// LocalStorage 저장 함수 (li 생성 시 원본 텍스트 저장하도록 수정됨)
-function saveCustomOptionsToStorage(type) {
-    const optionsList = document.getElementById(`${type}_options_list`);
-    const storageKey = (type === 'source') ? LS_CUSTOM_SOURCES_KEY : LS_CUSTOM_MEDIUMS_KEY;
+// LocalStorage 저장 함수 (수정됨: 동적 키 사용)
+function saveCustomOptionsToStorage(baseId) {
+    const optionsList = document.getElementById(`${baseId}_options_list`);
+    if (!optionsList) return;
+    const storageKey = `${LS_KEY_PREFIX}${baseId}`;
     const customValues = [];
     optionsList.querySelectorAll('li[data-type="custom"]').forEach(li => {
-        // createOptionLi에서 원본 텍스트를 저장했으므로 그대로 가져옴
-        customValues.push(li.querySelector('.option-content').textContent);
+        const contentElement = li.querySelector('.option-content');
+        if(contentElement) {
+            customValues.push(contentElement.textContent);
+        }
     });
     localStorage.setItem(storageKey, JSON.stringify(customValues));
 }
 
-// Dropdown Interaction Setup 함수 (선택 시 표시 텍스트 적용되도록 일부 수정)
-function setupDropdownInteractions(type) {
-    const dropdown = document.getElementById(`${type}_dropdown`);
-    const selectedValueDiv = document.getElementById(`${type}_selected_value`);
-    const optionsList = document.getElementById(`${type}_options_list`);
-    const hiddenInput = document.getElementById(`utm_${type}`); // 여기에는 Key(value) 저장
-    const addOptionButton = document.getElementById(`${type}_add_option_button`);
-    const addInputContainer = document.getElementById(`${type}_add_input_container`);
-    const addInput = document.getElementById(`${type}_add_input`);
+// Dropdown Interaction Setup 함수 (수정됨: baseId 기반으로 요소 찾기)
+function setupDropdownInteractions(baseId) {
+    const dropdown = document.getElementById(`${baseId}_dropdown`);
+    const selectedValueDiv = document.getElementById(`${baseId}_selected_value`);
+    const optionsList = document.getElementById(`${baseId}_options_list`);
+    const hiddenInput = document.getElementById(baseId); // 숨겨진 input은 baseId 사용
+    const addOptionButton = document.getElementById(`${baseId}_add_option_button`);
+    const addInputContainer = document.getElementById(`${baseId}_add_input_container`);
+    const addInput = document.getElementById(`${baseId}_add_input`);
 
-    // 드롭다운 열기/닫기 (변경 없음)
+    // 요소 존재 여부 확인
+     if (!dropdown || !selectedValueDiv || !optionsList || !hiddenInput || !addOptionButton || !addInputContainer || !addInput) {
+        // console.warn(`One or more dropdown elements missing for baseId: ${baseId}`);
+        return; // 필수 요소 없으면 설정 중단
+    }
+
+    // 드롭다운 열기/닫기
     selectedValueDiv.addEventListener('click', (event) => {
-         event.stopPropagation();
-         closeOtherDropdowns(type);
-         optionsList.classList.toggle('hidden');
-         addInputContainer.classList.add('hidden');
+        event.stopPropagation();
+        closeOtherDropdowns(baseId); // 다른 드롭다운 닫기
+        optionsList.classList.toggle('hidden');
+        addInputContainer.classList.add('hidden'); // 추가 입력창은 항상 닫음
     });
 
     // 옵션 리스트 이벤트 처리 (이벤트 위임)
     optionsList.addEventListener('click', (event) => {
         event.stopPropagation();
+        const targetLi = event.target.closest('li');
 
-        // 1. 삭제 버튼 클릭 (변경 없음)
-        if (event.target.classList.contains('delete-btn')) {
-            const targetLi = event.target.closest('li');
-            if (targetLi && targetLi.dataset.type === 'custom') {
-                if (confirm(`'${targetLi.querySelector('.option-content').textContent}' 항목을 삭제하시겠습니까?`)) {
-                    if (hiddenInput.value === targetLi.dataset.value) {
-                        selectedValueDiv.textContent = '-- 선택하세요 --';
-                        hiddenInput.value = '';
-                    }
-                    targetLi.remove();
-                    saveCustomOptionsToStorage(type);
-                    updateFinalURL();
+        // 1. 삭제 버튼 클릭
+        if (event.target.classList.contains('delete-btn') && targetLi && targetLi.dataset.type === 'custom') {
+             const textContent = targetLi.querySelector('.option-content')?.textContent || targetLi.dataset.value;
+             if (confirm(`'${textContent}' 항목을 삭제하시겠습니까?`)) {
+                if (hiddenInput.value === targetLi.dataset.value) {
+                    selectedValueDiv.textContent = '-- 선택하세요 --';
+                    hiddenInput.value = '';
                 }
+                targetLi.remove();
+                saveCustomOptionsToStorage(baseId);
+                updateFinalURL();
             }
         }
-        // 2. "+옵션 추가" 클릭 (변경 없음)
-        else if (event.target.closest('li') && event.target.closest('li').classList.contains('add-option')) {
+        // 2. "+옵션 추가" 클릭
+        else if (targetLi && targetLi.classList.contains('add-option')) {
              addInputContainer.classList.remove('hidden');
              addInput.value = '';
              addInput.focus();
         }
-        // 3. 일반 옵션 항목 클릭 (수정됨: 표시 텍스트 사용)
-        else if (event.target.closest('li') && event.target.closest('li').dataset.value) {
-            const targetLi = event.target.closest('li');
-            const value = targetLi.dataset.value; // 실제 사용할 Key 값
-            const text = targetLi.querySelector('.option-content').textContent; // 사용자에게 보여줄 표시 텍스트
+        // 3. 일반 옵션 항목 클릭
+        else if (targetLi && targetLi.dataset.value) {
+            const value = targetLi.dataset.value;
+            const text = targetLi.querySelector('.option-content')?.textContent || value;
 
-            selectedValueDiv.textContent = text; // 선택된 영역에는 표시 텍스트
-            hiddenInput.value = value;           // 숨겨진 input에는 Key 값 저장
+            selectedValueDiv.textContent = text;
+            hiddenInput.value = value;
             optionsList.classList.add('hidden');
             addInputContainer.classList.add('hidden');
             updateFinalURL();
         }
     });
 
-    // 새 옵션 입력 (Enter 키) (수정됨: 표시 텍스트 고려)
+    // 새 옵션 입력 (Enter 키)
     addInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            const newValue = addInput.value.trim(); // 사용자가 입력한 값 (표시 텍스트 겸 Key)
-            const lowerCaseValue = newValue.toLowerCase(); // Key로 사용할 소문자 값
+            const newValue = addInput.value.trim();
+            const lowerCaseValue = newValue.toLowerCase();
 
             // 유효성 검사 (Key 기준)
             if (!newValue) { alert('추가할 값을 입력해주세요.'); return; }
-            if (/[^a-z0-9_\-]/.test(lowerCaseValue)) { alert("값은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다."); return; }
+            // 네이밍 규칙 검사 강화 (선택적) - 공백 및 특정 특수문자 제한
+             if (/\s|&|\?|#|\.|\/|\\/.test(newValue)) {
+                 alert("띄어쓰기 및 특수문자(&, ?, #, ., /, \\)는 사용할 수 없습니다.");
+                 return;
+            }
+            // Key로는 소문자/숫자/_/- 만 허용 (기존 규칙 유지)
+            if (/[^a-z0-9_\-]/.test(lowerCaseValue)) {
+               alert("Key 값(소문자 변환값)은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다.");
+               return;
+             }
+
 
             // 중복 검사 (Key 기준)
             let exists = false;
             optionsList.querySelectorAll('li[data-value]').forEach(li => {
                 if(li.dataset.value === lowerCaseValue) exists = true;
             });
-            if (exists) { alert("이미 존재하는 값입니다."); return; }
+            if (exists) { alert("이미 존재하는 값(소문자 변환 기준)입니다."); return; }
 
-            // 새 li 생성 및 추가 (Key와 표시 텍스트 동일하게 사용)
-            const newLi = createOptionLi(newValue, newValue, 'custom');
+            const newLi = createOptionLi(newValue, newValue, 'custom'); // 표시 텍스트는 원본 사용
             optionsList.insertBefore(newLi, addOptionButton);
 
-            // 값 저장 및 UI 업데이트
-            saveCustomOptionsToStorage(type);
-            selectedValueDiv.textContent = newValue;   // 선택 영역에 표시 텍스트
-            hiddenInput.value = lowerCaseValue;      // 숨겨진 input에 Key 값
+            saveCustomOptionsToStorage(baseId);
+            selectedValueDiv.textContent = newValue;    // 선택 영역에 표시 텍스트
+            hiddenInput.value = lowerCaseValue;     // 숨겨진 input에 Key 값
             addInputContainer.classList.add('hidden');
             optionsList.classList.add('hidden');
             updateFinalURL();
         }
     });
 
-     // 입력 필드 포커스 아웃 시 숨김 (변경 없음)
+    // 입력 필드 포커스 아웃 시 숨김
     addInput.addEventListener('blur', () => {
-         setTimeout(() => {
-             if (!addInputContainer.contains(document.activeElement)) {
+        setTimeout(() => {
+            // 여전히 입력창이나 그 안의 요소에 포커스가 있다면 숨기지 않음
+            if (!addInputContainer.contains(document.activeElement)) {
                  addInputContainer.classList.add('hidden');
-             }
-         }, 150);
+            }
+        }, 150); // 약간의 딜레이를 주어 다른 요소 클릭 시 처리 시간 확보
     });
 }
 
-
-  // 다른 드롭다운 닫기 헬퍼
-  function closeOtherDropdowns(currentType) {
-        const types = ['source', 'medium'];
-        types.forEach(type => {
-            if (type !== currentType) {
-                document.getElementById(`${type}_options_list`).classList.add('hidden');
-                document.getElementById(`${type}_add_input_container`).classList.add('hidden');
-            }
-        });
-    }
-
-
-    // 외부 클릭 시 모든 드롭다운 닫기
-    document.addEventListener('click', (event) => {
-        const sourceDropdown = document.getElementById('source_dropdown');
-        const mediumDropdown = document.getElementById('medium_dropdown');
-        // 클릭된 요소가 드롭다운 영역 바깥이면 닫기
-        if (!sourceDropdown.contains(event.target)) {
-                document.getElementById('source_options_list').classList.add('hidden');
-                document.getElementById('source_add_input_container').classList.add('hidden');
-        }
-            if (!mediumDropdown.contains(event.target)) {
-                document.getElementById('medium_options_list').classList.add('hidden');
-                document.getElementById('medium_add_input_container').classList.add('hidden');
+// 다른 드롭다운 닫기 헬퍼
+function closeOtherDropdowns(currentBaseId) {
+    dropdownBaseIds.forEach(baseId => {
+        if (baseId !== currentBaseId) {
+            document.getElementById(`${baseId}_options_list`)?.classList.add('hidden');
+            document.getElementById(`${baseId}_add_input_container`)?.classList.add('hidden');
         }
     });
+}
+
+// 외부 클릭 시 모든 드롭다운 닫기
+document.addEventListener('click', (event) => {
+     dropdownBaseIds.forEach(baseId => {
+         const dropdownElement = document.getElementById(`${baseId}_dropdown`);
+         if (dropdownElement && !dropdownElement.contains(event.target)) {
+             document.getElementById(`${baseId}_options_list`)?.classList.add('hidden');
+             document.getElementById(`${baseId}_add_input_container`)?.classList.add('hidden');
+         }
+     });
+});
 
 
-    function getValueOrN(id) {
-            const value = document.getElementById(id).value.trim();
-            return value === "" ? "N" : value;
+// === UTM 조합 및 URL 업데이트 함수 (기존 로직 유지) ===
+
+// 값 가져오기 (없으면 'N')
+function getValueOrN(id) {
+    const element = document.getElementById(id);
+    // 숨겨진 input 이거나 text input 일 수 있으므로 value 확인
+    const value = element ? element.value.trim() : "";
+    return value === "" ? "N" : value;
+}
+
+// Form Submit 시 UTM 값 조합 (기존 로직 유지)
+function combineUTMValues() {
+    // 필수 항목 체크 (숨겨진 input 기준)
+    const requiredIds = ["source", "medium", "campaign_date", "ad_type", "device_type"];
+    for (let id of requiredIds) {
+        const element = document.getElementById(id);
+        if (!element || element.value.trim() === "") {
+            // 사용자 친화적 메시지: label 텍스트 가져오기 시도
+            const label = document.querySelector(`label[for='${id}']`) || document.getElementById(`${id}_dropdown`)?.previousElementSibling;
+            const fieldName = label ? label.textContent.replace(/ \(.+\):/, '').trim() : id; // 레이블 텍스트 정리
+             alert(`필수 항목 '${fieldName}'을(를) 선택 또는 입력해주세요.`);
+             element?.focus(); // 해당 필드로 포커스 이동 시도
+             return false; // 제출 중단
         }
+    }
 
-        function combineUTMValues() {
-            // 필수 항목 체크
-            const requiredIds = ["campaign_date", "ad_type", "device_type"];
-            for (let id of requiredIds) {
-                if (document.getElementById(id).value.trim() === "") {
-                    alert("utm_campaign 필수 항목을 입력해주세요.");
-                    return false;
-                }
-            }
+    // utm_campaign 조합
+    const campaignParts = [
+        getValueOrN("campaign_date"),
+        getValueOrN("ad_type"),
+        getValueOrN("campaign_goal"),
+        getValueOrN("event_type"),       // ID 기준
+        getValueOrN("product_category"), // ID 기준
+        getValueOrN("ad_target"),
+        getValueOrN("creative_type"),
+        getValueOrN("device_type")
+    ];
+    document.getElementById("utm_campaign").value = campaignParts.join("_");
 
-            // utm_campaign 조합
-            const campaignParts = [
-                getValueOrN("campaign_date"),
-                getValueOrN("ad_type"),
-                getValueOrN("campaign_goal"),
-                getValueOrN("event_type"),
-                getValueOrN("product_category"),
-                getValueOrN("ad_target"),
-                getValueOrN("creative_type"),
-                getValueOrN("device_type")
-            ];
-            document.getElementById("utm_campaign").value = campaignParts.join("_");
+    // utm_content 조합
+    const contentParts = [
+        getValueOrN("content_action"),   // ID 기준
+        getValueOrN("content_detail"),
+        getValueOrN("content_version")
+    ];
+    // 모든 부분이 'N'일 경우만 'N'으로, 아니면 조합
+    const utmContentValue = contentParts.every(part => part === "N") ? "N" : contentParts.join("_");
+    document.getElementById("utm_content").value = utmContentValue;
 
-            // utm_content 조합
-            const contentParts = [
-                getValueOrN("content_action"),
-                getValueOrN("content_detail"),
-                getValueOrN("content_version")
-            ];
-            document.getElementById("utm_content").value = contentParts.join("_");
+    // 최종 URL 업데이트 (실제 제출 전에 마지막 업데이트)
+    updateFinalURL();
 
-            // 최종 URL 업데이트
-            updateFinalURL();
+    // 여기서 실제 폼 제출 로직이 이어지거나, 다른 작업 수행 가능
+    console.log("Form Submitted (Simulated)");
+    console.log("Generated Campaign:", document.getElementById("utm_campaign").value);
+    console.log("Generated Content:", document.getElementById("utm_content").value);
+    console.log("Final URL:", document.getElementById("final_url").value);
 
-            return true;
-        }
+    // TODO: 히스토리 저장 로직 (필요시 구현)
+    // saveHistory();
 
-        function updateFinalURL() {
-				const pageUrl = document.getElementById("page_url").value.trim();
-				const utmSource = document.getElementById("utm_source").value.trim();
-				const utmMedium = document.getElementById("utm_medium").value.trim();
-				
-				// 실시간 utm_campaign 조합
-				const utmCampaign = [
-					getValueOrN("campaign_date"),
-					getValueOrN("ad_type"),
-					getValueOrN("campaign_goal"),
-					getValueOrN("event_type"),
-					getValueOrN("product_category"),
-					getValueOrN("ad_target"),
-					getValueOrN("creative_type"),
-					getValueOrN("device_type")
-				].join("_");
+    // 실제 서버 전송 대신 예시로 alert 띄우기 (실제 사용 시 제거/수정)
+    alert("UTM 링크가 생성되었습니다. 최종 URL을 확인하세요.\n(실제 서버 전송은 구현되지 않았습니다)");
+    return false; // 실제 폼 제출 방지 (테스트용)
 
-				const utmContent = [
-					getValueOrN("content_action"),
-					getValueOrN("content_detail"),
-					getValueOrN("content_version")
-				].join("_");
-				const utmTerm = document.getElementById("utm_term").value.trim();
+    // return true; // 실제 폼 제출을 원할 경우 true 반환
+}
 
-				let finalURL = `${pageUrl}?utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${utmCampaign}`;
+// 최종 URL 실시간 업데이트 (기존 로직 유지, utm_content 조건 수정)
+function updateFinalURL() {
+    const pageUrl = document.getElementById("page_url").value.trim();
+    const utmSource = document.getElementById("source").value.trim(); // ID 변경 반영
+    const utmMedium = document.getElementById("medium").value.trim(); // ID 변경 반영
 
-				if (utmContent && utmContent !== "N_N_N") finalURL += `&utm_content=${utmContent}`;
-				if (utmTerm) finalURL += `&utm_term=${utmTerm}`;
+    // 실시간 utm_campaign 조합
+    const utmCampaign = [
+        getValueOrN("campaign_date"),
+        getValueOrN("ad_type"),
+        getValueOrN("campaign_goal"),
+        getValueOrN("event_type"),
+        getValueOrN("product_category"),
+        getValueOrN("ad_target"),
+        getValueOrN("creative_type"),
+        getValueOrN("device_type")
+    ].join("_");
 
-				document.getElementById("final_url").value = finalURL;
-			}
+    // 실시간 utm_content 조합
+    const contentParts = [
+        getValueOrN("content_action"),
+        getValueOrN("content_detail"),
+        getValueOrN("content_version")
+    ];
+    const utmContent = contentParts.every(part => part === "N") ? "N" : contentParts.join("_");
 
-        // --- 조유하 담당 영역 예시 함수 (이전과 동일) ---
-    function addHistoryRow(data) {const tableBody = document.getElementById('historyTable').getElementsByTagName('tbody')[0];const newRow = tableBody.insertRow(0);newRow.insertCell().textContent = data.createdAt || new Date().toLocaleString();newRow.insertCell().textContent = data.source;newRow.insertCell().textContent = data.medium;newRow.insertCell().textContent = data.campaign;newRow.insertCell().textContent = data.content || 'N'; newRow.insertCell().textContent = data.term || 'N'; newRow.insertCell().innerHTML = data.shortUrl ? `<a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a>` : 'N/A'; newRow.insertCell().textContent = data.originalUrl;}
+    const utmTerm = document.getElementById("utm_term").value.trim();
+
+    // URL 조합 시작
+    let finalURL = pageUrl;
+    const params = [];
+
+    if (utmSource) params.push(`utm_source=${encodeURIComponent(utmSource)}`);
+    if (utmMedium) params.push(`utm_medium=${encodeURIComponent(utmMedium)}`);
+    if (utmCampaign) params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`); // 항상 포함 (필수값 기반)
+    if (utmContent && utmContent !== "N") params.push(`utm_content=${encodeURIComponent(utmContent)}`); // 모든 부분이 N일 경우 제외
+    if (utmTerm) params.push(`utm_term=${encodeURIComponent(utmTerm)}`);
+
+    if (params.length > 0) {
+        finalURL += (pageUrl.includes('?') ? '&' : '?') + params.join('&');
+    }
+
+    document.getElementById("final_url").value = finalURL;
+}
+
+// --- 이력 관리 함수 (필요시 구현) ---
+// function saveHistory() { ... }
+// function loadHistory() { ... }
+
+// --- CSV 파싱 보조 함수 (선택적, 간단 버전) ---
+// function parseCsvLine(line) {
+//   // 더 복잡한 CSV (따옴표 안의 쉼표 등) 처리가 필요하면 정규식 또는 라이브러리 사용
+//   return line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+// }
+
 
 </script>
 </body>
