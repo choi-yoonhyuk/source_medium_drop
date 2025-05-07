@@ -94,7 +94,7 @@ legend { font-weight: bold; }
 
 <div class="dv1">
 <div class="dv2">
-    <h1>UTM 링크 생성기 (병합)</h1>
+    <h1>UTM 링크 생성</h1>
     <table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;">
         <thead><tr><th colspan="2">UTM 네이밍 규칙</th></tr></thead>
         <tbody>
@@ -107,7 +107,7 @@ legend { font-weight: bold; }
 </div>
 
 <div class="dv3">
-    <form id="utmForm"> {/* onsubmit 핸들러는 script에서 addEventListener로 대체 */}
+    <form id="utmForm">
         <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
         <input type="text" id="page_url" name="page_url" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
 
@@ -145,7 +145,7 @@ legend { font-weight: bold; }
             <legend>UTM Campaign 구성</legend>
         
             <label for="campaign_date">날짜 <span class="required">(필수)</span>:</label>
-            <input type="text" id="campaign_date" name="campaign_date_display" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br> {/* name 변경 campaign_date_display */}
+            <input type="text" id="campaign_date" name="campaign_date_display" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br>
             
             <label for="ad_type">광고타입 <span class="required">(필수)</span>:</label>
             <div class="custom-dropdown-container">
@@ -153,7 +153,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="ad_type_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="ad_type_options_list"> <li class="add-option" id="ad_type_add_option_button">+ 옵션 추가</li> </ul>
                     <div class="add-option-input hidden" id="ad_type_add_input_container"><input type="text" id="ad_type_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="ad_type" name="ad_type_val" required> {/* name 변경 ad_type_val */}
+                </div><input type="hidden" id="ad_type" name="ad_type_val" required>
             </div><br><br>
             
             <label for="campaign_goal">캠페인목표:</label>
@@ -162,7 +162,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="campaign_goal_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="campaign_goal_options_list"><li class="add-option" id="campaign_goal_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="campaign_goal_add_input_container"><input type="text" id="campaign_goal_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="campaign_goal" name="campaign_goal_val"> {/* name 변경 */}
+                </div><input type="hidden" id="campaign_goal" name="campaign_goal_val">
             </div><br><br>
             
             <label for="event_type">기획전종류:</label>
@@ -171,7 +171,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="event_type_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="event_type_options_list"><li class="add-option" id="event_type_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="event_type_add_input_container"><input type="text" id="event_type_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="event_type" name="event_type_val"> {/* name 변경 */}
+                </div><input type="hidden" id="event_type" name="event_type_val"> 
             </div><br><br>
 
             <label for="product_category">상품카테고리:</label>
@@ -180,7 +180,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="product_category_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="product_category_options_list"><li class="add-option" id="product_category_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="product_category_add_input_container"><input type="text" id="product_category_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="product_category" name="product_category_val"> {/* name 변경 */}
+                </div><input type="hidden" id="product_category" name="product_category_val"> 
             </div><br><br>
 
             <label for="ad_target">광고타겟:</label>
@@ -189,7 +189,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="ad_target_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="ad_target_options_list"><li class="add-option" id="ad_target_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="ad_target_add_input_container"><input type="text" id="ad_target_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="ad_target" name="ad_target_val"> {/* name 변경 */}
+                </div><input type="hidden" id="ad_target" name="ad_target_val"> 
             </div><br><br>
 
             <label for="creative_type">소재타입:</label>
@@ -198,7 +198,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="creative_type_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="creative_type_options_list"><li class="add-option" id="creative_type_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="creative_type_add_input_container"><input type="text" id="creative_type_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="creative_type" name="creative_type_val"> {/* name 변경 */}
+                </div><input type="hidden" id="creative_type" name="creative_type_val"> 
             </div><br><br>
 
             <label for="device_type">기기카테고리 <span class="required">(필수)</span>:</label>
@@ -207,7 +207,7 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="device_type_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="device_type_options_list"><li class="add-option" id="device_type_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="device_type_add_input_container"><input type="text" id="device_type_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="device_type" name="device_type_val" required> {/* name 변경 */}
+                </div><input type="hidden" id="device_type" name="device_type_val" required> 
             </div><br><br>
         </fieldset>
     
@@ -219,13 +219,13 @@ legend { font-weight: bold; }
                     <div class="dropdown-selected" id="content_action_selected_value" tabindex="0">-- 선택하세요 --</div>
                     <ul class="dropdown-options hidden" id="content_action_options_list"><li class="add-option" id="content_action_add_option_button">+ 옵션 추가</li></ul>
                     <div class="add-option-input hidden" id="content_action_add_input_container"><input type="text" id="content_action_add_input" placeholder="입력 후 Enter"></div>
-                </div><input type="hidden" id="content_action" name="content_action_val"> {/* name 변경 */}
+                </div><input type="hidden" id="content_action" name="content_action_val"> 
             </div><br><br>
         
             <label for="content_detail">추가기입사항:</label>
-            <input type="text" id="content_detail" name="content_detail_display" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> {/* name 변경 */}
+            <input type="text" id="content_detail" name="content_detail_display" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> 
             <label for="content_version">버전:</label>
-            <input type="text" id="content_version" name="content_version_display" placeholder="v1" oninput="updateFinalURL()"><br><br> {/* name 변경 */}
+            <input type="text" id="content_version" name="content_version_display" placeholder="v1" oninput="updateFinalURL()"><br><br> 
         </fieldset>
 
         <label for="utm_term">UTM Term (선택):</label>
@@ -235,7 +235,7 @@ legend { font-weight: bold; }
         <input type="hidden" id="utm_content" name="utm_content">
 
         <label for="final_url">최종 URL:</label>
-        <input type="text" id="final_url" name="final_url_display" disabled style="width:100%; font-family:monospace;"> {/* name 추가 */}
+        <input type="text" id="final_url" name="final_url_display" disabled style="width:100%; font-family:monospace;"> 
         <button type="submit">제출</button>
     </form>
 
