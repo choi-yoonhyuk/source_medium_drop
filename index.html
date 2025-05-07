@@ -144,7 +144,6 @@ legend { font-weight: bold; }
 <div class="dv2">
     <h1>UTM 링크 생성기</h1>
     <table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;">
-        {/* 네이밍 규칙 테이블 */}
         <thead><tr><th colspan="2">UTM 네이밍 규칙</th></tr></thead>
         <tbody><tr><td>공통 규칙</td><td><ul><li>띄어쓰기 금지</li><li>구분자: 언더스코어('_') 및 하이픈('-') 사용</li><li>영문 네이밍: 소문자만 사용</li><li>특수문자 사용 금지 (&amp;, ?, #, ., /, \ 등)</li></ul></td></tr><tr><td>캠페인 규칙</td><td><ul><li>구성: 날짜_광고타입_캠페인목표_기획전종류_상품카테고리_광고타겟_소재타입_기기카테고리</li><li>없으면 'N'으로 채움</li><li><span class="required">필수 항목: 날짜, 광고타입, 기기카테고리</span></li></ul></td></tr><tr><td>콘텐츠 규칙</td><td><ul><li>목표행동, 추가기입사항, 버전 중 하나라도 입력되면 해당 값으로 조합</li><li>입력되지 않으면 'N'으로 처리</li></ul></td></tr></tbody>
     </table>
@@ -152,7 +151,6 @@ legend { font-weight: bold; }
 </div>
 
 <div class="dv3">
-    {/* 폼 onsubmit 변경 */}
     <form id="utmForm" onsubmit="event.preventDefault(); handleFormSubmit();">
         <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
         <input type="text" id="page_url" name="page_url" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
@@ -187,13 +185,11 @@ legend { font-weight: bold; }
         </div>
         <br><br>
 
-        {/* --- UTM Campaign Fieldset --- */}
         <fieldset style="border:1px solid #ccc; padding:10px;">
             <legend>UTM Campaign 구성</legend>
-            {/* 날짜 필드 */}
+        
             <label for="campaign_date">날짜 <span class="required">(필수)</span>:</label>
             <input type="text" id="campaign_date" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br>
-            {/* 나머지 드롭다운 필드들 (이전 답변과 동일한 HTML 구조) */}
                 <label for="ad_type">광고타입 <span class="required">(필수)</span>:</label>
                 <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="ad_type_dropdown">
@@ -252,7 +248,7 @@ legend { font-weight: bold; }
                 </div><br><br>
         </fieldset>
 
-        {/* --- UTM Content Fieldset --- */}
+   
         <fieldset style="border:1px solid #ccc; padding:10px;">
             <legend>UTM Content 구성</legend>
                 <label for="content_action">목표행동:</label>
@@ -263,7 +259,7 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="content_action_add_input_container"><input type="text" id="content_action_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="content_action" name="content_action">
                 </div><br><br>
-            {/* 나머지 Content 필드들 */}
+          
                 <label for="content_detail">추가기입사항:</label>
                 <input type="text" id="content_detail" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br>
                 <label for="content_version">버전:</label>
@@ -281,7 +277,6 @@ legend { font-weight: bold; }
         <button type="submit">제출</button>
     </form>
 
-    {/* 히스토리 테이블 */}
     <div id="historyTableContainer" style="margin-top: 30px;">
         <h2>생성 이력</h2>
         <table border="1" cellpadding="5" style="width:100%; border-collapse: collapse;" id="historyTable">
