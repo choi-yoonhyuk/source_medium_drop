@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 전송 방지)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -262,14 +262,14 @@ const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS
 const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 중요: 실제 n8n 프로덕션 URL로 변경! (테스트 시에는 Test URL)
 const HISTORY_JSON_URL = 'https://raw.githubusercontent.com/choi-yoonhyuk/source_medium_drop/main/n8n-builder.json'; 
 // 참고: HISTORY_JSON_URL은 n8n 워크플로우가 이 파일을 업데이트하거나, 
-// 또는 구글 시트에서 직접 이력을 가져오도록 변경하는 것을 고려해야 합니다.
+// 또는 구글 시트(옵션 마스터 시트 또는 로그 시트)에서 직접 이력을 가져오도록 변경하는 것을 고려해야 합니다.
 
 const dropdownBaseIds = [
     'source', 'medium', 'ad_type', 'campaign_goal', 'event_type', 
     'product_category', 'ad_target', 'creative_type', 'device_type', 'content_action'
 ];
 
-const columnHeaderMap = { // 클라이언트 CSV 파싱용
+const columnHeaderMap = { // 클라이언트 CSV 파싱용 (드롭다운 옵션 로딩 시 사용)
     'source': 'source', 'medium': 'medium', 'ad_type': 'utm_campaign_ad_type',
     'campaign_goal': 'utm_campaign_goal', 'event_type': 'utm_campaign_event_type',
     'product_category': 'utm_campaign_product_category', 'ad_target': 'utm_campaign_ad_target',
@@ -277,19 +277,25 @@ const columnHeaderMap = { // 클라이언트 CSV 파싱용
     'content_action': 'utm_content_content_action'
 };
 
+// --- 전역 변수: 마스터 옵션 목록 저장용 ---
+let masterOptionLists = {}; // 예: masterOptionLists.source = Set {'google', 'naver', ...}
+
 // --- 초기화 ---
 document.addEventListener('DOMContentLoaded', async () => {
     showLoading("옵션 및 이력 로딩 중...");
-    let csvData = null;
+    let csvDataText = null;
     try {
         const response = await fetch(GOOGLE_SHEET_CSV_URL);
         if (!response.ok) throw new Error(`CSV 로드 실패 (${response.status})`);
-        csvData = await response.text();
+        csvDataText = await response.text();
         console.log("CSV 데이터 로드 완료");
+
+        // 마스터 옵션 목록 파싱 및 저장
+        parseAndStoreMasterOptions(csvDataText);
 
         for (const baseId of dropdownBaseIds) {
             try {
-                renderAllOptions(baseId, csvData);
+                renderDropdownWithOptions(baseId); // 수정된 함수 호출
                 setupDropdownInteractions(baseId);
             } catch (error) {
                 console.error(`Error initializing dropdown for ${baseId}:`, error);
@@ -317,12 +323,12 @@ function hideLoading() {
 
 function createOptionLi(value, displayText, type) {
     const li = document.createElement('li');
-    const lowerCaseValue = String(value).toLowerCase(); 
+    const lowerCaseValue = String(value).trim().toLowerCase(); 
     li.dataset.value = lowerCaseValue; 
     li.dataset.type = type;
 
     const iconSpan = document.createElement('span'); iconSpan.className = 'icon'; li.appendChild(iconSpan);
-    const textSpan = document.createElement('span'); textSpan.className = 'option-content'; textSpan.textContent = displayText || value; li.appendChild(textSpan);
+    const textSpan = document.createElement('span'); textSpan.className = 'option-content'; textSpan.textContent = displayText.trim() || value.trim(); li.appendChild(textSpan);
 
     if (type === 'custom') {
         const deleteBtn = document.createElement('button'); deleteBtn.type = 'button'; deleteBtn.className = 'delete-btn'; deleteBtn.innerHTML = '&times;'; li.appendChild(deleteBtn);
@@ -330,54 +336,106 @@ function createOptionLi(value, displayText, type) {
     return li;
 }
 
-function renderAllOptions(baseId, csvData) {
+// --- 수정된 부분: CSV 파싱하여 masterOptionLists에 저장 ---
+function parseAndStoreMasterOptions(csvDataText) {
+    if (!csvDataText) return;
+    try {
+        const lines = csvDataText.split(/\r?\n/);
+        if (lines.length < 3) { // 최소 헤더, 타입, 데이터 1줄 필요
+            console.warn("CSV 데이터가 충분하지 않습니다 (최소 3줄 필요).");
+            return;
+        }
+        const headers = lines[0].split(',').map(h => String(h).trim().replace(/^"|"$/g, ''));
+        
+        for (const baseId of dropdownBaseIds) {
+            const targetCsvHeader = columnHeaderMap[baseId];
+            if (!targetCsvHeader) {
+                console.warn(`No CSV header mapping for dropdown baseId '${baseId}'.`);
+                masterOptionLists[baseId] = new Set(); // 빈 Set으로 초기화
+                continue;
+            }
+
+            const columnIndex = headers.findIndex(header => header === targetCsvHeader);
+            if (columnIndex === -1) {
+                console.warn(`CSV에서 '<span class="math-inline">\{targetCsvHeader\}' 컬럼을 찾을 수 없습니다 \(for baseId '</span>{baseId}').`);
+                masterOptionLists[baseId] = new Set(); // 빈 Set으로 초기화
+                continue;
+            }
+
+            const optionsForThisCategory = new Set();
+            for (let i = 2; i < lines.length; i++) { // 헤더 행(0)과 타입 행(1)은 건너뜀
+                const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+                if (columns.length > columnIndex) {
+                    const value = String(columns[columnIndex]).trim();
+                    if (value) { // 빈 값은 추가하지 않음
+                        optionsForThisCategory.add(value); // 원본 대소문자 유지하여 저장
+                    }
+                }
+            }
+            masterOptionLists[baseId] = optionsForThisCategory;
+            console.log(`Master options for ${baseId}:`, Array.from(optionsForThisCategory));
+        }
+    } catch (error) {
+        console.error("Error parsing master options CSV:", error);
+        // 모든 dropdownBaseId에 대해 빈 Set으로라도 초기화
+        dropdownBaseIds.forEach(baseId => {
+            if (!masterOptionLists[baseId]) masterOptionLists[baseId] = new Set();
+        });
+    }
+}
+
+
+// --- 수정된 부분: renderAllOptions 대신 renderDropdownWithOptions ---
+// 이 함수는 이제 masterOptionLists 와 localStorage를 사용하여 드롭다운을 채웁니다.
+function renderDropdownWithOptions(baseId) {
     const optionsList = document.getElementById(`${baseId}_options_list`);
     const addOptionButton = document.getElementById(`${baseId}_add_option_button`);
-    if (!optionsList || !addOptionButton) return;
+    if (!optionsList || !addOptionButton) {
+        console.error(`Dropdown elements not found for ${baseId}`);
+        return;
+    }
 
     optionsList.innerHTML = ''; 
     optionsList.appendChild(addOptionButton); 
 
-    const defaultOptions = new Set();
-    const targetHeader = columnHeaderMap[baseId];
+    const defaultOptionsFromMaster = masterOptionLists[baseId] || new Set();
+    const allRenderedValuesLowerCase = new Set(); // 중복 렌더링 방지 (소문자 기준)
 
-    if (targetHeader && csvData) {
-        try {
-            const lines = csvData.split(/\r?\n/);
-            if (lines.length > 1) {
-                const headers = lines[0].split(',').map(h => String(h).trim().replace(/^"|"$/g, ''));
-                const columnIndex = headers.findIndex(header => header === targetHeader);
-                if (columnIndex !== -1) {
-                    for (let i = 2; i < lines.length; i++) { 
-                        const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
-                        if (columns.length > columnIndex) {
-                            const value = String(columns[columnIndex]).trim();
-                            if (value) { defaultOptions.add(value); }
-                        }
-                    }
-                } else { console.warn(`Column '<span class="math-inline">\{targetHeader\}' not found for '</span>{baseId}'.`); }
-            }
-        } catch (error) { console.error(`Error parsing CSV for ${baseId}:`, error); }
-    } else if (!targetHeader) { console.warn(`No header mapping for '${baseId}'.`); }
-
-    defaultOptions.forEach(value => {
-        const li = createOptionLi(value, value, 'default');
-        optionsList.insertBefore(li, addOptionButton);
+    // 1. 마스터 목록(CSV에서 로드) 옵션 렌더링
+    defaultOptionsFromMaster.forEach(value => {
+        const lowerCaseValue = String(value).trim().toLowerCase();
+        if (value.trim() && !allRenderedValuesLowerCase.has(lowerCaseValue)) { // 빈 값 및 중복 값 제외
+            const li = createOptionLi(value, value, 'default'); // 원본 값으로 표시
+            optionsList.insertBefore(li, addOptionButton);
+            allRenderedValuesLowerCase.add(lowerCaseValue);
+        }
     });
 
+    // 2. 로컬 스토리지 커스텀 옵션 렌더링 (마스터 목록에 없는 것만)
     const storageKey = `<span class="math-inline">\{LS\_KEY\_PREFIX\}</span>{baseId}`;
-    const customValues = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const existingValues = new Set(Array.from(optionsList.querySelectorAll('li[data-value]')).map(li => li.dataset.value));
+    const customValuesFromStorage = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
-    customValues.forEach(value => {
-        const lowerCaseValue = String(value).toLowerCase();
-        if (!existingValues.has(lowerCaseValue)) {
-            const li = createOptionLi(value, value, 'custom');
-            optionsList.insertBefore(li, addOptionButton);
-            existingValues.add(lowerCaseValue);
+    customValuesFromStorage.forEach(value => {
+        const originalValue = String(value).trim();
+        const lowerCaseValue = originalValue.toLowerCase();
+        if (originalValue && !allRenderedValuesLowerCase.has(lowerCaseValue)) { // 빈 값 및 이미 렌더링된 값 제외
+             // 마스터 목록에 있는지 다시 한번 확인 (대소문자 구분 없이)
+            let isInMasterList = false;
+            defaultOptionsFromMaster.forEach(masterOpt => {
+                if (String(masterOpt).trim().toLowerCase() === lowerCaseValue) {
+                    isInMasterList = true;
+                }
+            });
+
+            if (!isInMasterList) {
+                const li = createOptionLi(originalValue, originalValue, 'custom');
+                optionsList.insertBefore(li, addOptionButton);
+                allRenderedValuesLowerCase.add(lowerCaseValue);
+            }
         }
     });
 }
+
 
 function saveCustomOptionsToStorage(baseId) {
     const optionsList = document.getElementById(`${baseId}_options_list`);
@@ -443,20 +501,15 @@ function setupDropdownInteractions(baseId) {
             if (/\s|&|\?|#|\.|\/|\\/.test(originalNewValue)) { alert("띄어쓰기 및 특수문자(&, ?, #, ., /, \\)는 사용할 수 없습니다."); return; }
             if (/[^a-z0-9_\-]/.test(lowerCaseNewValue)) { alert("Key 값(소문자로 변환된 값)은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다."); return; }
             
-            let exists = false; 
-            optionsList.querySelectorAll('li[data-value]').forEach(li => { if(li.dataset.value === lowerCaseNewValue) exists = true; });
-            if (exists) { alert("이미 존재하는 값(소문자 변환 기준)입니다."); return; }
+            let existsInCurrentDropdown = false; 
+            optionsList.querySelectorAll('li[data-value]').forEach(li => { if(li.dataset.value === lowerCaseNewValue) existsInCurrentDropdown = true; });
+            if (existsInCurrentDropdown) { alert("이미 현재 드롭다운 목록에 존재하는 값입니다 (소문자 기준)."); return; }
 
             const newLi = createOptionLi(originalNewValue, originalNewValue, 'custom'); 
             optionsList.insertBefore(newLi, addOptionButton);
-            saveCustomOptionsToStorage(baseId); // 로컬 스토리지에만 저장
+            saveCustomOptionsToStorage(baseId); 
 
-            // --- 앱스 스크립트 호출 부분 제거 ---
-            // const gasWebAppUrl = GOOGLE_APPS_SCRIPT_WEB_APP_URL; // 이 변수 자체가 이제 필요 없음
-            // if (!gasWebAppUrl || gasWebAppUrl.includes('YOUR_DEPLOYED_GAS_WEB_APP_URL')) { ... } 
-            // else { fetch(...) } 부분 전체 삭제
-            console.log(`새 옵션 '${originalNewValue}'은(는) 로컬 스토리지에 저장되었습니다. 중앙 관리가 필요하면 원본 CSV를 직접 수정하세요.`);
-            // --- 앱스 스크립트 호출 부분 제거 완료 ---
+            console.log(`새 옵션 '${originalNewValue}'은(는) 로컬 스토리지에 저장되었습니다. 이 값이 중앙 마스터 목록(구글 시트)에 없다면, 다음 '제출' 시 n8n으로 전달되어 추가될 수 있습니다.`);
             
             selectedValueDiv.textContent = originalNewValue;
             hiddenInput.value = lowerCaseNewValue; 
@@ -493,11 +546,6 @@ function getValueOrN(elementId) {
     const element = document.getElementById(elementId);
     let value = "";
     if (element) {
-        // 'campaign_date', 'content_detail', 'content_version', 'utm_term'은 display ID가 아닌 실제 input ID를 사용하도록 가정
-        // 또는 oninput="updateFinalURL()"을 호출하는 input들의 ID와 일치시켜야 함.
-        // 현재 HTML에서는 campaign_date는 campaign_date_display, content_detail은 content_detail_display, content_version은 content_version_display로 되어 있음.
-        // 이 부분을 통일하거나, 여기서 ID를 정확히 맞춰야 함.
-        // getValueOrN 호출 시 ID를 정확히 전달하는 것으로 가정하고, element.value를 바로 사용.
         value = element.value.trim();
     }
     return value === "" || value === "-- 선택하세요 --" ? "N" : value;
@@ -507,8 +555,6 @@ function updateFinalURL() {
     const pageUrl = document.getElementById("page_url").value.trim();
     const utmSource = getValueOrN("source"); 
     const utmMedium = getValueOrN("medium");
-
-    // campaign_date는 name="campaign_date_display"를 가진 input의 ID가 "campaign_date"임.
     const campaignDate = getValueOrN("campaign_date"); 
     const adType = getValueOrN("ad_type");
     const campaignGoal = getValueOrN("campaign_goal");
@@ -522,16 +568,14 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.join("_");
+    const utmCampaign = utmCampaignParts.map(part => part || "N").join("_"); // N 처리 강화
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
-    // content_detail은 name="content_detail_display"를 가진 input의 ID가 "content_detail"임.
     const contentDetail = getValueOrN("content_detail"); 
-    // content_version은 name="content_version_display"를 가진 input의 ID가 "content_version"임.
     const contentVersion = getValueOrN("content_version"); 
     
-    const utmContentParts = [contentAction, contentDetail, contentVersion];
+    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part || "N"); // N 처리 강화
     const utmContent = utmContentParts.every(part => part === "N") ? "N" : utmContentParts.join("_");
     document.getElementById("utm_content").value = utmContent;
     
@@ -563,7 +607,7 @@ async function fetchHistoryData() {
             console.warn('히스토리 데이터 형식 오류. 배열이 아닙니다.');
             return [];
         }
-        return data.sort((a, b) => new Date(b.timestamp || b.formData?.timestamp || 0) - new Date(a.timestamp || a.formData?.timestamp || 0)); // 최신순 정렬
+        return data.sort((a, b) => new Date(b.timestamp || b.formData?.timestamp || 0) - new Date(a.timestamp || a.formData?.timestamp || 0));
     } catch (error) {
         console.warn('히스토리 데이터 로딩 실패(파일 없음 가능):', error);
         return [];
@@ -576,13 +620,13 @@ async function renderHistoryTable() {
     tableBody.innerHTML = ''; 
 
     showLoading("이력 로딩 중...");
-    const data = await fetchHistoryData(); // 이미 정렬된 데이터
+    const data = await fetchHistoryData(); 
     hideLoading();
 
     if (data.length === 0) {
         const row = tableBody.insertRow();
         const cell = row.insertCell();
-        cell.colSpan = 9; // 단축 URL 포함 9개 컬럼
+        cell.colSpan = 9; 
         cell.textContent = '표시할 생성 이력이 없습니다.';
         cell.style.textAlign = 'center';
         return;
@@ -590,7 +634,6 @@ async function renderHistoryTable() {
 
     data.forEach(item => {
         const row = tableBody.insertRow(); 
-        // timestamp 키가 우선, 없으면 formData.timestamp, 둘 다 없으면 현재시간 (기존 로직 유지하되, 정렬은 fetchHistoryData에서 처리)
         let displayTimestamp = 'N/A';
         const itemTimestamp = item.timestamp || item.formData?.timestamp;
         if (itemTimestamp) {
@@ -615,7 +658,7 @@ async function renderHistoryTable() {
         const finalUrlCell = row.insertCell();
         const finalUrl = item.final_url || item.formData?.final_url || '';
         finalUrlCell.textContent = finalUrl;
-        finalUrlCell.title = finalUrl; // 전체 URL을 툴팁으로
+        finalUrlCell.title = finalUrl; 
         finalUrlCell.style.maxWidth = '200px'; finalUrlCell.style.overflow = 'hidden'; finalUrlCell.style.textOverflow = 'ellipsis'; finalUrlCell.style.whiteSpace = 'nowrap';
         
         const shortUrlCell = row.insertCell();
@@ -635,9 +678,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         let element = document.getElementById(id);
         let valueToCheck = element ? element.value.trim() : "";
         
-        // campaign_date는 id가 campaign_date임. (name="campaign_date_display"와 별개)
-        // source, medium 등은 hidden input의 id가 baseId임 (예: id="source")
-        
         if (!valueToCheck || valueToCheck === "-- 선택하세요 --") {
             const labelElement = document.querySelector(`label[for='${id}']`) || 
                                  (element?.classList.contains('custom-dropdown') ? element.previousElementSibling : null) ||
@@ -653,21 +693,67 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     
     updateFinalURL(); 
 
+    // --- 새로운 옵션 값 식별 로직 추가 ---
+    let newOptionsForMasterList = [];
+    for (const baseId of dropdownBaseIds) {
+        const hiddenInputElement = document.getElementById(baseId);
+        if (hiddenInputElement) {
+            const selectedValueKey = hiddenInputElement.value.trim().toLowerCase(); // hidden input에는 소문자 key 저장
+            const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
+            const selectedValueDisplayText = selectedValueDisplayElement ? selectedValueDisplayElement.textContent.trim() : selectedValueKey; // 화면 표시 값
+
+            if (selectedValueKey && selectedValueKey !== "n" && selectedValueKey !== "-- 선택하세요 --") {
+                const masterListForCategory = masterOptionLists[baseId] || new Set(); // 해당 카테고리의 마스터 옵션 Set
+                let isNewForMaster = true;
+                
+                // 마스터 옵션 목록(원본 대소문자 유지)과 화면 표시 값(원본 대소문자 유지)을 비교
+                if (masterListForCategory.has(selectedValueDisplayText)) {
+                    isNewForMaster = false;
+                }
+
+                if (isNewForMaster) {
+                    newOptionsForMasterList.push({
+                        parameter_category: baseId,      // 예: 'source', 'medium', 'ad_type'
+                        new_value: selectedValueDisplayText // 구글 시트에 추가할 실제 값 (원본 대소문자)
+                    });
+                }
+            }
+        }
+    }
+    console.log("New options for master list:", newOptionsForMasterList);
+    // --- 새로운 옵션 값 식별 로직 종료 ---
+
+
     const formDataForN8n = {
-        page_url: document.getElementById('page_url').value,
-        utm_source: document.getElementById('source').value, // hidden input의 value
-        utm_medium: document.getElementById('medium').value, // hidden input의 value
-        utm_campaign: document.getElementById('utm_campaign').value, // hidden input의 value (조합됨)
-        utm_content: document.getElementById('utm_content').value, // hidden input의 value (조합됨)
-        utm_term: document.getElementById('utm_term').value, // text input의 value
-        final_url: document.getElementById('final_url').value,
-        timestamp: new Date().toISOString() 
+        page_url: document.getElementById('page_url').value.trim(),
+        utm_source: document.getElementById('source').value.trim(), 
+        utm_medium: document.getElementById('medium').value.trim(), 
+        
+        // 개별 구성요소도 함께 전송 (n8n에서 활용하거나, 구글 시트에 개별 저장 가능)
+        campaign_date: document.getElementById('campaign_date').value.trim(),
+        ad_type: document.getElementById('ad_type').value.trim(),
+        campaign_goal: document.getElementById('campaign_goal').value.trim(),
+        event_type: document.getElementById('event_type').value.trim(),
+        product_category: document.getElementById('product_category').value.trim(),
+        ad_target: document.getElementById('ad_target').value.trim(),
+        creative_type: document.getElementById('creative_type').value.trim(),
+        device_type: document.getElementById('device_type').value.trim(),
+        content_action: document.getElementById('content_action').value.trim(),
+        content_detail: document.getElementById('content_detail').value.trim(),
+        content_version: document.getElementById('content_version').value.trim(),
+
+        utm_campaign: document.getElementById('utm_campaign').value.trim(), 
+        utm_content: document.getElementById('utm_content').value.trim(), 
+        utm_term: document.getElementById('utm_term').value.trim(), 
+        final_url: document.getElementById('final_url').value.trim(),
+        timestamp: new Date().toISOString(),
+        new_options_for_master_list: newOptionsForMasterList // 식별된 새 옵션 목록 추가
     };
 
     console.log("Submitting Form Data to n8n:", formDataForN8n);
 
     try {
-        const n8nUrl = N8N_WEBHOOK_URL; // 이 URL을 실제 n8n URL로 변경해야 합니다.
+        const n8nUrl = N8N_WEBHOOK_URL; 
         if (!n8nUrl || n8nUrl === '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
             let alertMessage = "n8n 웹훅 URL이 올바르게 설정되지 않았습니다.\n";
             if (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:') {
@@ -696,15 +782,11 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         if (result.short_url) {
             document.getElementById("shortUrlInput").value = result.short_url;
             document.getElementById("responseContainer").style.display = "block";
-            await renderHistoryTable(); // n8n 처리 후 히스토리 다시 로드 (n8n이 HISTORY_JSON_URL을 업데이트한다고 가정)
+            await renderHistoryTable(); 
             alert("UTM 링크 생성, 단축 및 시트 저장 요청 완료!\n최종 URL: " + formDataForN8n.final_url + "\n단축 URL: " + result.short_url);
         } else {
             alert("단축 URL을 받아오지 못했습니다. n8n 워크플로우 응답을 확인하세요.\n(시트 저장은 시도되었을 수 있습니다)\n최종 URL: " + formDataForN8n.final_url);
             document.getElementById("responseContainer").style.display = "none";
-            // 시트 저장은 되었을 수 있으므로, 히스토리를 업데이트 할 수도 있습니다.
-            // 다만, HISTORY_JSON_URL이 n8n에 의해 업데이트되지 않는다면, 여기서 renderHistoryTable() 호출은 의미가 없을 수 있습니다.
-            // 사용자의 n8n 워크플로우가 HISTORY_JSON_URL을 업데이트하는지 확인이 필요합니다.
-            // 일단은 호출하여 로컬 파일 기반 히스토리가 있다면 그것이라도 다시 그리도록 합니다.
              await renderHistoryTable(); 
         }
     } catch (err) {
