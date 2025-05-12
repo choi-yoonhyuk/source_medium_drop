@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 방지 개선)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 방지 최종)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -143,10 +143,8 @@ legend { font-weight: bold; }
         
         <fieldset style="border:1px solid #ccc; padding:10px;">
             <legend>UTM Campaign 구성</legend>
-        
             <label for="campaign_date">날짜 <span class="required">(필수)</span>:</label>
             <input type="text" id="campaign_date" name="campaign_date_form" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br> 
-            
             <label for="ad_type">광고타입 <span class="required">(필수)</span>:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="ad_type_dropdown">
@@ -155,7 +153,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="ad_type_add_input_container"><input type="text" id="ad_type_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="ad_type" name="ad_type_hidden" required>
             </div><br><br>
-            
             <label for="campaign_goal">캠페인목표:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="campaign_goal_dropdown">
@@ -164,7 +161,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="campaign_goal_add_input_container"><input type="text" id="campaign_goal_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="campaign_goal" name="campaign_goal_hidden">
             </div><br><br>
-            
             <label for="event_type">기획전종류:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="event_type_dropdown">
@@ -173,7 +169,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="event_type_add_input_container"><input type="text" id="event_type_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="event_type" name="event_type_hidden"> 
             </div><br><br>
-
             <label for="product_category">상품카테고리:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="product_category_dropdown">
@@ -182,7 +177,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="product_category_add_input_container"><input type="text" id="product_category_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="product_category" name="product_category_hidden"> 
             </div><br><br>
-
             <label for="ad_target">광고타겟:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="ad_target_dropdown">
@@ -191,7 +185,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="ad_target_add_input_container"><input type="text" id="ad_target_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="ad_target" name="ad_target_hidden"> 
             </div><br><br>
-
             <label for="creative_type">소재타입:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="creative_type_dropdown">
@@ -200,7 +193,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="creative_type_add_input_container"><input type="text" id="creative_type_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="creative_type" name="creative_type_hidden"> 
             </div><br><br>
-
             <label for="device_type">기기카테고리 <span class="required">(필수)</span>:</label>
             <div class="custom-dropdown-container">
                 <div class="custom-dropdown" id="device_type_dropdown">
@@ -221,7 +213,6 @@ legend { font-weight: bold; }
                     <div class="add-option-input hidden" id="content_action_add_input_container"><input type="text" id="content_action_add_input" placeholder="입력 후 Enter"></div>
                 </div><input type="hidden" id="content_action" name="content_action_hidden"> 
             </div><br><br>
-        
             <label for="content_detail">추가기입사항:</label>
             <input type="text" id="content_detail" name="content_detail_form" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> 
             <label for="content_version">버전:</label>
@@ -340,7 +331,7 @@ function parseAndStoreMasterOptions(csvDataText) {
     }
     try {
         const lines = csvDataText.split(/\r?\n/);
-        if (lines.length < 3) {
+        if (lines.length < 3) { 
             console.warn("CSV 데이터가 충분하지 않습니다 (옵션 데이터는 3번째 줄부터 시작).");
             dropdownBaseIds.forEach(baseId => { masterOptionLists[baseId] = new Set(); });
             return;
@@ -363,7 +354,7 @@ function parseAndStoreMasterOptions(csvDataText) {
             }
 
             const optionsForThisCategory = new Set();
-            for (let i = 2; i < lines.length; i++) {
+            for (let i = 2; i < lines.length; i++) { 
                 const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
                 if (columns.length > columnIndex) {
                     const value = String(columns[columnIndex]).trim();
@@ -373,6 +364,7 @@ function parseAndStoreMasterOptions(csvDataText) {
                 }
             }
             masterOptionLists[baseId] = optionsForThisCategory;
+            console.log(`DEBUG: Master options loaded for [${baseId}]:`, Array.from(optionsForThisCategory)); // 디버깅 로그 추가
         }
     } catch (error) {
         console.error("Error parsing master options CSV:", error);
@@ -528,10 +520,11 @@ function getValueOrN(elementId) {
     if (element) {
         value = element.value.trim(); 
     }
-    if (value === "" || document.getElementById(`${elementId}_selected_value`)?.textContent.trim() === "-- 선택하세요 --") {
-        return "n"; // 소문자 'n'으로 통일
+    const selectedDisplayElement = document.getElementById(`${elementId}_selected_value`);
+    if (value === "" && selectedDisplayElement?.textContent.trim() === "-- 선택하세요 --") {
+        return "n"; 
     }
-    return value.toLowerCase(); // hidden input에 저장된 값은 이미 소문자화되었거나, text input 값은 여기서 소문자화
+    return value === "" ? "n" : value.toLowerCase(); 
 }
 
 function updateFinalURL() {
@@ -551,7 +544,7 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_"); // "N"으로 표시
+    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_");
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
@@ -573,12 +566,13 @@ function updateFinalURL() {
     if (utmSource && utmSource !== "n") params.push(`utm_source=${encodeURIComponent(utmSource)}`);
     if (utmMedium && utmMedium !== "n") params.push(`utm_medium=${encodeURIComponent(utmMedium)}`);
     
-    const defaultCampaign = Array(utmCampaignParts.length).fill("N").join("_"); // 비교 시 대문자 "N"
+    const defaultCampaign = Array(utmCampaignParts.length).fill("N").join("_"); 
     if (utmCampaign && utmCampaign !== defaultCampaign) {
         params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`);
     }
-    // utmContent가 "N"이거나, "N_N_N" (모든 부분이 N인 경우)이 아닐 때 추가
-    if (utmContent && utmContent !== "N" && utmContent !== "N_N_N") { 
+    
+    const defaultContent = Array(utmContentParts.length).fill("N").join("_");
+    if (utmContent && utmContent !== "N" && utmContent !== defaultContent) { 
          params.push(`utm_content=${encodeURIComponent(utmContent)}`);
     }
     if (utmTerm && utmTerm !== "n") params.push(`utm_term=${encodeURIComponent(utmTerm)}`);
@@ -589,7 +583,7 @@ function updateFinalURL() {
     document.getElementById("final_url").value = finalURLGenerated;
 }
 
-async function fetchHistoryData() { /* 내용 생략 - 이전 답변의 안정화된 버전 사용 */ 
+async function fetchHistoryData() { 
     try {
         const response = await fetch(HISTORY_JSON_URL);
         if (!response.ok) {
@@ -620,7 +614,7 @@ async function fetchHistoryData() { /* 내용 생략 - 이전 답변의 안정�
         return []; 
     }
 }
-async function renderHistoryTable() { /* 내용 생략 - 이전 답변의 안정화된 버전 사용 */
+async function renderHistoryTable() { 
     const tableBody = document.getElementById('historyTable')?.getElementsByTagName('tbody')[0];
     if (!tableBody) { console.error("History table body (tbody) 요소를 찾을 수 없습니다!"); return; }
     tableBody.innerHTML = ''; 
@@ -679,7 +673,22 @@ async function renderHistoryTable() { /* 내용 생략 - 이전 답변의 안정
         shortUrlCell.style.cssText = 'max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
     });
 }
-function copyLink() { /* 내용 생략 - 기존과 동일 */ }
+function copyLink() { 
+    const input = document.getElementById("shortUrlInput");
+    if (!input || !input.value) {
+        alert("복사할 단축 URL이 없습니다."); return;
+    }
+    input.select(); input.setSelectionRange(0, 99999); 
+    try {
+        const successful = document.execCommand("copy");
+        if (successful) { alert("✅ 단축 URL 복사 완료!"); } 
+        else { alert("❌ 단축 URL 복사에 실패했습니다. 직접 복사해주세요."); }
+    } catch (err) {
+        alert("❌ 복사 기능 사용 중 오류가 발생했습니다."); console.error('Copy error', err);
+    }
+    if (window.getSelection) { window.getSelection().removeAllRanges(); } 
+    else if (document.selection) { document.selection.empty(); }
+}
 
 
 document.getElementById("utmForm").addEventListener("submit", async (e) => {
@@ -687,16 +696,12 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     showLoading("UTM 링크 생성 및 전송 중...");
 
     const requiredFieldsCheck = [
-        { id: "page_url", name: "Page URL" },
-        { id: "source", name: "UTM Source" },
-        { id: "medium", name: "UTM Medium" },
-        { id: "campaign_date", name: "날짜" },
-        { id: "ad_type", name: "광고타입" },
-        { id: "device_type", name: "기기카테고리" }
+        { id: "page_url", name: "Page URL" }, { id: "source", name: "UTM Source" },
+        { id: "medium", name: "UTM Medium" }, { id: "campaign_date", name: "날짜" },
+        { id: "ad_type", name: "광고타입" }, { id: "device_type", name: "기기카테고리" }
     ];
 
     for (let field of requiredFieldsCheck) {
-        // getValueOrN은 소문자화된 값 또는 "n"을 반환. 필수값 체크는 "n"이 아니어야 함.
         let valueToCheck = getValueOrN(field.id); 
         if (valueToCheck === "n") { 
             alert(`필수 항목 '${field.name}'을(를) 선택 또는 입력해주세요.`);
@@ -715,42 +720,60 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
 
     // --- "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별 (대소문자 무시 비교 적용) ---
     let newOptionsForMasterList = [];
+    console.log("--- Identifying new options for master list ---");
     for (const baseId of dropdownBaseIds) { 
         const hiddenInputElement = document.getElementById(baseId); 
         const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
 
         if (hiddenInputElement && selectedValueDisplayElement) {
-            const selectedValueKey = hiddenInputElement.value.trim(); // hidden input에는 소문자화된 키 또는 빈 문자열이 저장됨
-            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 화면에 표시된 원본 값 (대소문자 유지)
+            const selectedValueKey = hiddenInputElement.value.trim(); // 예: "google", "cpc", ""
+            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 예: "Google", "CPC", "-- 선택하세요 --"
 
-            if (selectedValueKey && selectedValueKey !== "n" && selectedValueDisplayText !== "-- 선택하세요 --") {
-                const masterListForThisCategory = masterOptionLists[baseId] || new Set(); 
+            console.log(`\n[<span class="math-inline">\{baseId\}\] Selected Display Text\: '</span>{selectedValueDisplayText}', Selected Key (from hidden input): '${selectedValueKey}'`);
+
+            if (selectedValueDisplayText && selectedValueDisplayText !== "N" && selectedValueDisplayText !== "-- 선택하세요 --") {
+                const masterListForThisCategory = masterOptionLists[baseId] || new Set();
+                console.log(`[${baseId}] Master list from CSV (original case):`, Array.from(masterListForThisCategory));
                 
                 let isNewForMaster = true; 
                 const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
+                console.log(`[<span class="math-inline">\{baseId\}\] Lowercased Selected Display Text for comparison\: '</span>{lowercasedSelectedDisplayText}'`);
 
-                for (const masterOption of masterListForThisCategory) {
-                    if (String(masterOption).trim().toLowerCase() === lowercasedSelectedDisplayText) {
-                        isNewForMaster = false; 
-                        break;
+                if (masterListForThisCategory.size === 0) {
+                    console.log(`[<span class="math-inline">\{baseId\}\] Master list is empty for this category, considering '</span>{selectedValueDisplayText}' as new.`);
+                } else {
+                    for (const masterOption of masterListForThisCategory) {
+                        const lowercasedMasterOption = String(masterOption).trim().toLowerCase();
+                        console.log(`[<span class="math-inline">\{baseId\}\] Comparing selected '</span>{lowercasedSelectedDisplayText}' with master '${lowercasedMasterOption}'`);
+                        if (lowercasedMasterOption === lowercasedSelectedDisplayText) {
+                            isNewForMaster = false; 
+                            console.log(`[<span class="math-inline">\{baseId\}\] Match found\! '</span>{selectedValueDisplayText}' is NOT new.`);
+                            break;
+                        }
                     }
                 }
 
                 if (isNewForMaster) {
+                    console.log(`[<span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' IS new. Adding to newOptionsForMasterList.`);
                     newOptionsForMasterList.push({
                         parameter_category: baseId,        
                         new_value: selectedValueDisplayText 
                     });
+                } else {
+                    console.log(`[<span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' already exists in master list (case-insensitive). Not adding.`);
                 }
+            } else {
+                console.log(`[${baseId}] Skipped (Value is 'N', '-- 선택하세요 --', or empty display text).`);
             }
+        } else {
+            console.warn(`[${baseId}] Hidden input or display element not found.`);
         }
     }
-    console.log("New options for master list (to be sent to n8n):", newOptionsForMasterList);
+    console.log("--- 최종 new_options_for_master_list (to be sent to n8n):", newOptionsForMasterList, " ---");
     // --- 새로운 옵션 값 식별 로직 종료 ---
 
     const formDataForN8n = {
         page_url: document.getElementById('page_url').value.trim(),
-        // getValueOrN을 사용하여 hiddenInput/textInput에서 최종 소문자 값을 가져옴
         utm_source: getValueOrN('source'), 
         utm_medium: getValueOrN('medium'), 
         
@@ -766,8 +789,8 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         content_detail: getValueOrN('content_detail'),
         content_version: getValueOrN('content_version'),
 
-        utm_campaign_combined: document.getElementById('utm_campaign').value.trim(), // id "utm_campaign"은 조합된 값을 가짐
-        utm_content_combined: document.getElementById('utm_content').value.trim(), // id "utm_content"는 조합된 값을 가짐
+        utm_campaign_combined: document.getElementById('utm_campaign').value.trim(), 
+        utm_content_combined: document.getElementById('utm_content').value.trim(), 
         utm_term: getValueOrN('utm_term'), 
         final_url: document.getElementById('final_url').value.trim(),
         timestamp: new Date().toISOString(),
