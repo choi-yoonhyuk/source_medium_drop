@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 전송 방지)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 방지 개선)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -109,7 +109,7 @@ legend { font-weight: bold; }
 <div class="dv3">
     <form id="utmForm">
         <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
-        <input type="text" id="page_url" name="page_url" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
+        <input type="text" id="page_url" name="page_url_form" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
 
         <label for="source">UTM Source <span class="required">(필수)</span>:</label>
         <div class="custom-dropdown-container">
@@ -122,7 +122,8 @@ legend { font-weight: bold; }
                     <input type="text" id="source_add_input" placeholder="입력 후 Enter">
                 </div>
             </div>
-            <input type="hidden" id="source" name="utm_source_hidden" required> </div>
+            <input type="hidden" id="source" name="source_hidden" required>
+        </div>
         <br><br>
 
         <label for="medium">UTM Medium <span class="required">(필수)</span>:</label>
@@ -136,7 +137,7 @@ legend { font-weight: bold; }
                     <input type="text" id="medium_add_input" placeholder="입력 후 Enter">
                 </div>
             </div>
-            <input type="hidden" id="medium" name="utm_medium_hidden" required>
+            <input type="hidden" id="medium" name="medium_hidden" required>
         </div>
         <br><br>
         
@@ -144,7 +145,7 @@ legend { font-weight: bold; }
             <legend>UTM Campaign 구성</legend>
         
             <label for="campaign_date">날짜 <span class="required">(필수)</span>:</label>
-            <input type="text" id="campaign_date" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br> 
+            <input type="text" id="campaign_date" name="campaign_date_form" placeholder="YYYYMMDD" oninput="updateFinalURL()" required><br><br> 
             
             <label for="ad_type">광고타입 <span class="required">(필수)</span>:</label>
             <div class="custom-dropdown-container">
@@ -222,13 +223,13 @@ legend { font-weight: bold; }
             </div><br><br>
         
             <label for="content_detail">추가기입사항:</label>
-            <input type="text" id="content_detail" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> 
+            <input type="text" id="content_detail" name="content_detail_form" placeholder="120X240-vertical" oninput="updateFinalURL()"><br><br> 
             <label for="content_version">버전:</label>
-            <input type="text" id="content_version" placeholder="v1" oninput="updateFinalURL()"><br><br> 
+            <input type="text" id="content_version" name="content_version_form" placeholder="v1" oninput="updateFinalURL()"><br><br> 
         </fieldset>
 
         <label for="utm_term">UTM Term (선택):</label>
-        <input type="text" id="utm_term" placeholder="shoes" oninput="updateFinalURL()"><br><br> 
+        <input type="text" id="utm_term" name="utm_term_form" placeholder="shoes" oninput="updateFinalURL()"><br><br> 
 
         <input type="hidden" id="utm_campaign" name="utm_campaign_combined" required>
         <input type="hidden" id="utm_content" name="utm_content_combined">
@@ -258,7 +259,7 @@ legend { font-weight: bold; }
 // --- 설정값 ---
 const LS_KEY_PREFIX = 'utmGenerator_standalone_';
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv';
-const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 중요: 실제 n8n URL로 변경! (테스트 시에는 Test URL)
+const N8N_WEBHOOK_URL = '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요'; // <-- 사용자 실제 n8n URL로 변경 필수!
 const HISTORY_JSON_URL = 'https://raw.githubusercontent.com/choi-yoonhyuk/source_medium_drop/main/n8n-builder.json'; 
 
 const dropdownBaseIds = [
@@ -266,7 +267,7 @@ const dropdownBaseIds = [
     'product_category', 'ad_target', 'creative_type', 'device_type', 'content_action'
 ];
 
-const columnHeaderMap = { // CSV 파싱 시 어떤 열에서 데이터를 가져올지 매핑
+const columnHeaderMap = { 
     'source': 'source', 'medium': 'medium', 'ad_type': 'utm_campaign_ad_type',
     'campaign_goal': 'utm_campaign_goal', 'event_type': 'utm_campaign_event_type',
     'product_category': 'utm_campaign_product_category', 'ad_target': 'utm_campaign_ad_target',
@@ -274,9 +275,8 @@ const columnHeaderMap = { // CSV 파싱 시 어떤 열에서 데이터를 가져
     'content_action': 'utm_content_content_action'
 };
 
-let masterOptionLists = {}; // 전역 변수: 마스터 옵션 목록 저장용
+let masterOptionLists = {}; 
 
-// --- 초기화 ---
 document.addEventListener('DOMContentLoaded', async () => {
     showLoading("옵션 및 이력 로딩 중...");
     let csvDataText = null;
@@ -306,7 +306,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// === Helper Functions ===
 function showLoading(message = "처리 중...") {
     const indicator = document.getElementById('loadingIndicator');
     if (indicator) { indicator.textContent = message; indicator.style.display = 'flex'; }
@@ -318,7 +317,7 @@ function hideLoading() {
 
 function createOptionLi(value, displayText, type) {
     const li = document.createElement('li');
-    const valueForDataset = String(value).trim().toLowerCase();
+    const valueForDataset = String(value).trim().toLowerCase(); 
     li.dataset.value = valueForDataset; 
     li.dataset.type = type;
 
@@ -369,12 +368,11 @@ function parseAndStoreMasterOptions(csvDataText) {
                 if (columns.length > columnIndex) {
                     const value = String(columns[columnIndex]).trim();
                     if (value) { 
-                        optionsForThisCategory.add(value); // 원본 대소문자 유지하여 Set에 저장
+                        optionsForThisCategory.add(value); 
                     }
                 }
             }
             masterOptionLists[baseId] = optionsForThisCategory;
-            // console.log(`Master options for ${baseId}:`, Array.from(optionsForThisCategory)); 
         }
     } catch (error) {
         console.error("Error parsing master options CSV:", error);
@@ -506,14 +504,23 @@ function setupDropdownInteractions(baseId) {
     });
 }
 
-function closeOtherDropdowns(currentBaseId) { /* 내용 생략 - 기존과 동일 */ }
-document.addEventListener('click', (event) => { /* 내용 생략 - 기존과 동일 */ });
-function getValueOrN(elementId) { /* 내용 수정됨 - 아래 참조 */ }
-function updateFinalURL() { /* 내용 수정됨 - 아래 참조 */ }
-async function fetchHistoryData() { /* 내용 생략 - 기존과 동일 */ }
-async function renderHistoryTable() { /* 내용 수정됨 - 아래 참조 */ }
-function copyLink() { /* 내용 생략 - 기존과 동일 */ }
-
+function closeOtherDropdowns(currentBaseId) { 
+    dropdownBaseIds.forEach(baseId => { 
+        if (baseId !== currentBaseId) { 
+            document.getElementById(`${baseId}_options_list`)?.classList.add('hidden'); 
+            document.getElementById(`${baseId}_add_input_container`)?.classList.add('hidden'); 
+        } 
+    });
+}
+document.addEventListener('click', (event) => {
+    dropdownBaseIds.forEach(baseId => { 
+        const dropdownElement = document.getElementById(`${baseId}_dropdown`); 
+        if (dropdownElement && !dropdownElement.contains(event.target)) { 
+            document.getElementById(`${baseId}_options_list`)?.classList.add('hidden'); 
+            document.getElementById(`${baseId}_add_input_container`)?.classList.add('hidden'); 
+        } 
+    });
+});
 
 function getValueOrN(elementId) {
     const element = document.getElementById(elementId);
@@ -521,13 +528,10 @@ function getValueOrN(elementId) {
     if (element) {
         value = element.value.trim(); 
     }
-    // "-- 선택하세요 --" 값은 실제 value가 아니라, hidden input의 초기 값 (보통 빈 문자열)과 비교해야 함.
-    // 또는 selectedValueDiv의 textContent와 비교. 여기서는 hidden input의 값을 기준으로 함.
-    if (value === "" || value === "-- 선택하세요 --") { // hidden input이 초기값일 수 있으므로
-        const selectedDisplay = document.getElementById(`${elementId}_selected_value`)?.textContent.trim();
-        if(selectedDisplay === "-- 선택하세요 --") return "N";
+    if (value === "" || document.getElementById(`${elementId}_selected_value`)?.textContent.trim() === "-- 선택하세요 --") {
+        return "n"; // 소문자 'n'으로 통일
     }
-    return value === "" ? "N" : value.toLowerCase(); // 빈 문자열이면 N, 아니면 소문자화된 값
+    return value.toLowerCase(); // hidden input에 저장된 값은 이미 소문자화되었거나, text input 값은 여기서 소문자화
 }
 
 function updateFinalURL() {
@@ -547,21 +551,21 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.map(part => part === "N" ? "N" : (part || "N")).join("_");
+    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_"); // "N"으로 표시
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
     const contentDetail = getValueOrN("content_detail"); 
     const contentVersion = getValueOrN("content_version"); 
     
-    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "N" ? "N" : (part || "N"));
+    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "n" ? "N" : part);
     const utmContent = utmContentParts.every(part => part === "N") ? "N" : utmContentParts.join("_");
     document.getElementById("utm_content").value = utmContent;
     
     const utmTerm = getValueOrN("utm_term"); 
 
     let finalURLGenerated = pageUrl;
-    if (!pageUrl) { // 페이지 URL이 없으면 최종 URL도 만들지 않음
+    if (!pageUrl) { 
         document.getElementById("final_url").value = "";
         return;
     }
@@ -569,11 +573,12 @@ function updateFinalURL() {
     if (utmSource && utmSource !== "n") params.push(`utm_source=${encodeURIComponent(utmSource)}`);
     if (utmMedium && utmMedium !== "n") params.push(`utm_medium=${encodeURIComponent(utmMedium)}`);
     
-    const defaultCampaign = Array(utmCampaignParts.length).fill("n").join("_");
+    const defaultCampaign = Array(utmCampaignParts.length).fill("N").join("_"); // 비교 시 대문자 "N"
     if (utmCampaign && utmCampaign !== defaultCampaign) {
         params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`);
     }
-    if (utmContent && utmContent !== "n_n_n" && utmContent !== "N") { // 모든 부분이 N으로만 구성된 경우 제외 (N_N_N) 및 단일 N
+    // utmContent가 "N"이거나, "N_N_N" (모든 부분이 N인 경우)이 아닐 때 추가
+    if (utmContent && utmContent !== "N" && utmContent !== "N_N_N") { 
          params.push(`utm_content=${encodeURIComponent(utmContent)}`);
     }
     if (utmTerm && utmTerm !== "n") params.push(`utm_term=${encodeURIComponent(utmTerm)}`);
@@ -584,21 +589,53 @@ function updateFinalURL() {
     document.getElementById("final_url").value = finalURLGenerated;
 }
 
-async function renderHistoryTable() {
+async function fetchHistoryData() { /* 내용 생략 - 이전 답변의 안정화된 버전 사용 */ 
+    try {
+        const response = await fetch(HISTORY_JSON_URL);
+        if (!response.ok) {
+            console.warn(`히스토리 파일(${HISTORY_JSON_URL}) 없음 또는 불러오기 실패:`, response.status, response.statusText);
+            return []; 
+        }
+        const responseText = await response.text(); 
+        if (!responseText) {
+            console.warn(`히스토리 파일(${HISTORY_JSON_URL}) 내용이 비어있습니다.`);
+            return []; 
+        }
+        const data = JSON.parse(responseText); 
+        if (!Array.isArray(data)) {
+            console.warn(`히스토리 데이터(${HISTORY_JSON_URL}) 형식 오류. 배열이 아닙니다. 실제 내용:`, data);
+            return []; 
+        }
+        return data.sort((a, b) => {
+            const timeA = a?.timestamp || (a?.formData && a.formData.timestamp) || 0;
+            const timeB = b?.timestamp || (b?.formData && b.formData.timestamp) || 0;
+            const dateA = new Date(timeA);
+            const dateB = new Date(timeB);
+            const valA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0;
+            const valB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
+            return valB - valA; 
+        });
+    } catch (error) {
+        console.warn(`히스토리 데이터(${HISTORY_JSON_URL}) 로딩 또는 파싱 실패:`, error);
+        return []; 
+    }
+}
+async function renderHistoryTable() { /* 내용 생략 - 이전 답변의 안정화된 버전 사용 */
     const tableBody = document.getElementById('historyTable')?.getElementsByTagName('tbody')[0];
-    if (!tableBody) { console.error("historyTable tbody not found"); return; }
+    if (!tableBody) { console.error("History table body (tbody) 요소를 찾을 수 없습니다!"); return; }
     tableBody.innerHTML = ''; 
 
     showLoading("이력 로딩 중...");
-    let data = [];
+    let historyData;
     try {
-        data = await fetchHistoryData(); 
-    } catch (e) {
-        console.error("Error fetching or parsing history data in renderHistoryTable:", e);
+        historyData = await fetchHistoryData(); 
+    } catch (fetchError) {
+        console.error("fetchHistoryData 함수 호출 중 오류 발생:", fetchError);
+        historyData = []; 
     }
     hideLoading();
 
-    if (!Array.isArray(data) || data.length === 0) { // data가 배열이 아니거나 비었으면
+    if (!Array.isArray(historyData) || historyData.length === 0) { 
         const row = tableBody.insertRow();
         const cell = row.insertCell();
         cell.colSpan = 9; 
@@ -607,7 +644,7 @@ async function renderHistoryTable() {
         return;
     }
 
-    data.forEach(item => {
+    historyData.forEach(item => {
         const row = tableBody.insertRow(); 
         let displayTimestamp = 'N/A';
         const itemTimestamp = item?.timestamp || (item?.formData && item.formData.timestamp);
@@ -642,13 +679,13 @@ async function renderHistoryTable() {
         shortUrlCell.style.cssText = 'max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
     });
 }
+function copyLink() { /* 내용 생략 - 기존과 동일 */ }
 
 
 document.getElementById("utmForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     showLoading("UTM 링크 생성 및 전송 중...");
 
-    // 필수 항목 유효성 검사 (getValueOrN 사용으로 변경하여 "N" 또는 실제 값(소문자)으로 확인)
     const requiredFieldsCheck = [
         { id: "page_url", name: "Page URL" },
         { id: "source", name: "UTM Source" },
@@ -659,36 +696,47 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     ];
 
     for (let field of requiredFieldsCheck) {
-        let valueToCheck = getValueOrN(field.id); // getValueOrN은 소문자화된 값 또는 "N"을 반환
-        if (valueToCheck === "n" || valueToCheck === "") { // "N" (소문자) 또는 빈 문자열이면 오류
+        // getValueOrN은 소문자화된 값 또는 "n"을 반환. 필수값 체크는 "n"이 아니어야 함.
+        let valueToCheck = getValueOrN(field.id); 
+        if (valueToCheck === "n") { 
             alert(`필수 항목 '${field.name}'을(를) 선택 또는 입력해주세요.`);
             hideLoading();
             const elementToFocus = document.getElementById(field.id);
-            if (document.getElementById(`${field.id}_dropdown`)) document.getElementById(`${field.id}_selected_value`)?.click();
-            else elementToFocus?.focus();
+            if (document.getElementById(`${field.id}_dropdown`)) {
+                 document.getElementById(`${field.id}_selected_value`)?.click();
+            } else {
+                 elementToFocus?.focus();
+            }
             return;
         }
     }
     
-    updateFinalURL(); // 최종 URL 및 utm_campaign, utm_content 값 최종 업데이트 (소문자 값 기반으로 URL 생성)
+    updateFinalURL(); 
 
-    // --- "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별 ---
+    // --- "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별 (대소문자 무시 비교 적용) ---
     let newOptionsForMasterList = [];
     for (const baseId of dropdownBaseIds) { 
         const hiddenInputElement = document.getElementById(baseId); 
         const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
 
         if (hiddenInputElement && selectedValueDisplayElement) {
-            // hiddenInputElement.value는 이미 소문자화된 키 값 또는 ""
-            // selectedValueDisplayText는 화면에 보이는 원본 대소문자 값
-            const selectedValueKey = hiddenInputElement.value.trim(); // 이미 소문자 또는 ""
-            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); 
+            const selectedValueKey = hiddenInputElement.value.trim(); // hidden input에는 소문자화된 키 또는 빈 문자열이 저장됨
+            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 화면에 표시된 원본 값 (대소문자 유지)
 
             if (selectedValueKey && selectedValueKey !== "n" && selectedValueDisplayText !== "-- 선택하세요 --") {
-                const masterListForThisCategory = masterOptionLists[baseId] || new Set();
+                const masterListForThisCategory = masterOptionLists[baseId] || new Set(); 
                 
-                // selectedValueDisplayText (화면 표시 원본 값)가 masterListForThisCategory(원본 대소문자 저장된 Set)에 없는 경우 "새로운 값"으로 간주
-                if (!masterListForThisCategory.has(selectedValueDisplayText)) {
+                let isNewForMaster = true; 
+                const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
+
+                for (const masterOption of masterListForThisCategory) {
+                    if (String(masterOption).trim().toLowerCase() === lowercasedSelectedDisplayText) {
+                        isNewForMaster = false; 
+                        break;
+                    }
+                }
+
+                if (isNewForMaster) {
                     newOptionsForMasterList.push({
                         parameter_category: baseId,        
                         new_value: selectedValueDisplayText 
@@ -718,9 +766,9 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         content_detail: getValueOrN('content_detail'),
         content_version: getValueOrN('content_version'),
 
-        utm_campaign: document.getElementById('utm_campaign').value.trim(), 
-        utm_content: document.getElementById('utm_content').value.trim(), 
-        utm_term: getValueOrN('utm_term'),  // utm_term도 getValueOrN 사용
+        utm_campaign_combined: document.getElementById('utm_campaign').value.trim(), // id "utm_campaign"은 조합된 값을 가짐
+        utm_content_combined: document.getElementById('utm_content').value.trim(), // id "utm_content"는 조합된 값을 가짐
+        utm_term: getValueOrN('utm_term'), 
         final_url: document.getElementById('final_url').value.trim(),
         timestamp: new Date().toISOString(),
         new_options_for_master_list: newOptionsForMasterList 
@@ -773,33 +821,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         hideLoading();
     }
 });
-
-function copyLink() {
-    const input = document.getElementById("shortUrlInput");
-    if (!input || !input.value) {
-        alert("복사할 단축 URL이 없습니다.");
-        return;
-    }
-    input.select();
-    input.setSelectionRange(0, 99999); 
-
-    try {
-        const successful = document.execCommand("copy");
-        if (successful) {
-            alert("✅ 단축 URL 복사 완료!");
-        } else {
-            alert("❌ 단축 URL 복사에 실패했습니다. 직접 복사해주세요.");
-        }
-    } catch (err) {
-        alert("❌ 복사 기능 사용 중 오류가 발생했습니다.");
-        console.error('Copy error', err);
-    }
-    if (window.getSelection) {
-      window.getSelection().removeAllRanges();
-    } else if (document.selection) {
-      document.selection.empty();
-    }
-}
 </script>
 </body>
 </html>
