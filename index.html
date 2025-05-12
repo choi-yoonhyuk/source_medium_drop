@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동 - 디버깅 강화)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 중복 옵션 방지 최종)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -470,11 +470,12 @@ function getValueOrN(elementId) {
     if (element) {
         value = element.value.trim(); 
     }
+    // 드롭다운의 경우, 화면 표시 값 "-- 선택하세요 --"를 기준으로 "n" 판단
     const selectedDisplayElement = document.getElementById(`${elementId}_selected_value`);
-    if (value === "" && selectedDisplayElement?.textContent.trim() === "-- 선택하세요 --") {
-        return "n"; 
+    if (selectedDisplayElement?.textContent.trim() === "-- 선택하세요 --") {
+        return "n"; // 소문자 'n'으로 통일
     }
-    return value === "" ? "n" : value.toLowerCase(); 
+    return value === "" ? "n" : value.toLowerCase(); // hidden input 값 (이미 소문자 or 빈값) 또는 text input 값 소문자화
 }
 
 function updateFinalURL() {
@@ -494,14 +495,14 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_");
+    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_"); // 최종 URL에는 대문자 N
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
     const contentDetail = getValueOrN("content_detail"); 
     const contentVersion = getValueOrN("content_version"); 
     
-    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "n" ? "N" : part);
+    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "n" ? "N" : part); // 최종 URL에는 대문자 N
     const utmContent = utmContentParts.every(part => part === "N") ? "N" : utmContentParts.join("_");
     document.getElementById("utm_content").value = utmContent;
     
@@ -588,10 +589,57 @@ async function renderHistoryTable() {
         return;
     }
 
-    historyData.forEach(item => { /* 기존과 동일한 테이블 행 생성 로직 */ });
-}
-function copyLink() { /* 기존과 동일 */ }
+    historyData.forEach(item => {
+        const row = tableBody.insertRow(); 
+        let displayTimestamp = 'N/A';
+        const itemTimestamp = item?.timestamp || (item?.formData && item.formData.timestamp);
+        if (itemTimestamp) {
+            try {
+                displayTimestamp = new Date(itemTimestamp).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short'});
+            } catch (e) { console.warn("Error parsing timestamp for history: ", itemTimestamp, e); }
+        }
+        row.insertCell().textContent = displayTimestamp;
+        row.insertCell().textContent = item?.utm_source || (item?.formData && item.formData.utm_source) || 'N';
+        row.insertCell().textContent = item?.utm_medium || (item?.formData && item.formData.utm_medium) || 'N';
+        row.insertCell().textContent = item?.utm_campaign || (item?.formData && item.formData.utm_campaign) || 'N';
+        row.insertCell().textContent = item?.utm_content || (item?.formData && item.formData.utm_content) || 'N';
+        row.insertCell().textContent = item?.utm_term || (item?.formData && item.formData.utm_term) || 'N';
+        
+        const pageUrlCell = row.insertCell();
+        const originalPageUrl = item?.page_url || (item?.formData && item.formData.page_url) || '';
+        pageUrlCell.textContent = originalPageUrl;
+        pageUrlCell.title = originalPageUrl;
+        pageUrlCell.style.cssText = 'max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
 
+        const finalUrlCell = row.insertCell();
+        const finalUrl = item?.final_url || (item?.formData && item.formData.final_url) || '';
+        finalUrlCell.textContent = finalUrl;
+        finalUrlCell.title = finalUrl; 
+        finalUrlCell.style.cssText = 'max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        
+        const shortUrlCell = row.insertCell();
+        const shortUrl = item?.short_url || ''; 
+        shortUrlCell.textContent = shortUrl || 'N/A';
+        shortUrlCell.title = shortUrl;
+        shortUrlCell.style.cssText = 'max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+    });
+}
+function copyLink() { 
+    const input = document.getElementById("shortUrlInput");
+    if (!input || !input.value) {
+        alert("복사할 단축 URL이 없습니다."); return;
+    }
+    input.select(); input.setSelectionRange(0, 99999); 
+    try {
+        const successful = document.execCommand("copy");
+        if (successful) { alert("✅ 단축 URL 복사 완료!"); } 
+        else { alert("❌ 단축 URL 복사에 실패했습니다. 직접 복사해주세요."); }
+    } catch (err) {
+        alert("❌ 복사 기능 사용 중 오류가 발생했습니다."); console.error('Copy error', err);
+    }
+    if (window.getSelection) { window.getSelection().removeAllRanges(); } 
+    else if (document.selection) { document.selection.empty(); }
+}
 
 document.getElementById("utmForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -631,44 +679,43 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
             const selectedValueKey = hiddenInputElement.value.trim(); // 소문자 key 값 (또는 "" 또는 "n")
             const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 화면에 표시된 원본 값 (대소문자 유지)
 
-            console.log(`\n[Submit Check - <span class="math-inline">\{baseId\}\] Selected Display Text\: '</span>{selectedValueDisplayText}', Hidden Input Key: '${selectedValueKey}'`);
+            // 상세 디버깅 로그: 선택된 값과 마스터 리스트 상태 확인
+            // console.log(`\n[Submit Check - <span class="math-inline">\{baseId\}\] Current Display Text\: '</span>{selectedValueDisplayText}', Current Hidden Key: '${selectedValueKey}'`);
+            // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Master list for this category \(masterOptionLists\['</span>{baseId}']):`, Array.from(masterOptionLists[baseId] || new Set()));
+
 
             if (selectedValueDisplayText && selectedValueDisplayText !== "N" && selectedValueDisplayText !== "-- 선택하세요 --") {
                 const masterListForThisCategory = masterOptionLists[baseId] || new Set();
-                console.log(`[Submit Check - ${baseId}] Master list from CSV (original case) for comparison:`, Array.from(masterListForThisCategory));
                 
                 let isNewForMaster = true; 
                 const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
-                console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Lowercased Selected Display Text for comparison\: '</span>{lowercasedSelectedDisplayText}'`);
+                // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Lowercased Selected Display Text for comparison\: '</span>{lowercasedSelectedDisplayText}'`);
 
-                if (masterListForThisCategory.size === 0 && lowercasedSelectedDisplayText !== "n") { // 마스터 목록이 비었으면 'n'이 아닌 이상 새것으로 간주
-                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Master list is empty, considering '</span>{selectedValueDisplayText}' as new.`);
-                } else {
+                if (masterListForThisCategory.size > 0) {
                     for (const masterOption of masterListForThisCategory) {
                         const lowercasedMasterOption = String(masterOption).trim().toLowerCase();
-                        // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Comparing selected '</span>{lowercasedSelectedDisplayText}' with master '${lowercasedMasterOption}'`);
                         if (lowercasedMasterOption === lowercasedSelectedDisplayText) {
                             isNewForMaster = false; 
-                            console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Match found\! '</span>{selectedValueDisplayText}' (lc: <span class="math-inline">\{lowercasedSelectedDisplayText\}\) is NOT new\. It exists as '</span>{masterOption}' (lc: ${lowercasedMasterOption}) in master list.`);
+                            // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Match found\! '</span>{selectedValueDisplayText}' is NOT new. It exists as '${masterOption}' in master list.`);
                             break;
                         }
                     }
+                } else if (lowercasedSelectedDisplayText === "n") { 
+                    // 마스터 목록이 비어있고, 선택된 값이 "n" (getValueOrN 기본값)이면 새것으로 간주 안함
+                    isNewForMaster = false;
+                    // console.log(`[Submit Check - ${baseId}] Master list empty, selected value is 'n', not new.`);
                 }
+                // else: 마스터 목록 비었고, 선택값이 "n"이 아니면 isNewForMaster는 true 유지 (새것으로 간주)
+                // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] After check, isNewForMaster for '</span>{selectedValueDisplayText}': ${isNewForMaster}`);
+
 
                 if (isNewForMaster) {
-                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' IS new. Adding to newOptionsForMasterList.`);
                     newOptionsForMasterList.push({
                         parameter_category: baseId,        
                         new_value: selectedValueDisplayText 
                     });
-                } else {
-                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' already exists in master list (case-insensitive). Not adding.`);
                 }
-            } else {
-                console.log(`[Submit Check - ${baseId}] Skipped (Value is 'N', '-- 선택하세요 --', or empty display text).`);
             }
-        } else {
-            console.warn(`[Submit Check - ${baseId}] Hidden input or display element not found.`);
         }
     }
     console.log("--- 최종 new_options_for_master_list (to be sent to n8n):", newOptionsForMasterList, " ---");
@@ -704,7 +751,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     try {
         const n8nUrl = N8N_WEBHOOK_URL; 
         if (!n8nUrl || n8nUrl === '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
-            // ... (기존 URL 미설정 또는 로컬호스트 경고 로직) ...
             let alertMessage = "n8n 웹훅 URL이 올바르게 설정되지 않았습니다.\n";
             if (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:') {
                 alertMessage = "경고: 현재 페이지는 HTTPS이나 n8n 웹훅은 HTTP 로컬호스트입니다. 실제 환경에서는 정상 동작하지 않을 수 있습니다.\n(혼합 콘텐츠 오류 발생 가능)\n";
