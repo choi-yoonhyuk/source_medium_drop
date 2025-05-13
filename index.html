@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동 - 로컬스토리지 저장 포함)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 로컬스토리지 최종)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -494,14 +494,14 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_");
+    const utmCampaign = utmCampaignParts.map(part => (part === "n" || part === "") ? "N" : part).join("_");
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
     const contentDetail = getValueOrN("content_detail"); 
     const contentVersion = getValueOrN("content_version"); 
     
-    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "n" ? "N" : part);
+    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => (part === "n" || part === "") ? "N" : part);
     const utmContent = utmContentParts.every(part => part === "N") ? "N" : utmContentParts.join("_");
     document.getElementById("utm_content").value = utmContent;
     
@@ -640,6 +640,7 @@ function copyLink() {
     else if (document.selection) { document.selection.empty(); }
 }
 
+
 document.getElementById("utmForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     showLoading("UTM 링크 생성 및 전송 중...");
@@ -667,58 +668,7 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     
     updateFinalURL(); 
 
-    // --- "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별 ---
-    const optionsForMasterUpdate = {}; // 객체로 변경, 예: { source: '새값', ad_type: '새값2' }
-
-    // ### 제출 시점의 상세 디버깅 로그 (반드시 확인!) ###
-    console.log("--- Identifying new options for master list (Submit Event) ---");
-    for (const baseId of dropdownBaseIds) { 
-        const hiddenInputElement = document.getElementById(baseId); 
-        const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
-
-        if (hiddenInputElement && selectedValueDisplayElement) {
-            const selectedValueKey = hiddenInputElement.value.trim(); 
-            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); 
-
-            console.log(`\n[Submit Check - <span class="math-inline">\{baseId\}\] Current Display Text\: '</span>{selectedValueDisplayText}', Current Hidden Input Key: '${selectedValueKey}'`);
-            
-            if (selectedValueDisplayText && selectedValueDisplayText !== "N" && selectedValueDisplayText !== "-- 선택하세요 --") {
-                const masterListForThisCategory = masterOptionLists[baseId] || new Set();
-                console.log(`[Submit Check - ${baseId}] Master list from CSV (original case) for comparison:`, Array.from(masterListForThisCategory));
-                
-                let isNewForMaster = true; 
-                const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
-                console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Lowercased Selected Display Text for comparison\: '</span>{lowercasedSelectedDisplayText}'`);
-
-                if (masterListForThisCategory.size > 0) {
-                    for (const masterOption of masterListForThisCategory) {
-                        const lowercasedMasterOption = String(masterOption).trim().toLowerCase();
-                        // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Comparing selected '</span>{lowercasedSelectedDisplayText}' with master '${lowercasedMasterOption}'`);
-                        if (lowercasedMasterOption === lowercasedSelectedDisplayText) {
-                            isNewForMaster = false; 
-                            console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Match found\! '</span>{selectedValueDisplayText}' (lc: <span class="math-inline">\{lowercasedSelectedDisplayText\}\) is NOT new\. It exists as '</span>{masterOption}' (lc: ${lowercasedMasterOption}) in master list.`);
-                            break;
-                        }
-                    }
-                } else if (lowercasedSelectedDisplayText === "n") { 
-                    isNewForMaster = false;
-                    console.log(`[Submit Check - ${baseId}] Master list empty, selected value implies 'not set' ('n'), not new.`);
-                }
-                
-                if (isNewForMaster) {
-                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' IS new. Adding to optionsForMasterUpdate object with key 'add_master_${baseId}'.`);
-                    // n8n에서 이 키들을 보고 "옵션 마스터 시트"의 어떤 열에 추가할지 알 수 있도록 명명합니다.
-                    // 그리고 이 값은 "옵션 마스터 시트"에 추가될 "원본 대소문자 값"입니다.
-                    optionsForMasterUpdate[`add_master_${baseId}`] = selectedValueDisplayText; 
-                } else {
-                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' already exists in master list (case-insensitive). Not adding for master update.`);
-                }
-            }
-        }
-    }
-    console.log("--- 최종 optionsForMasterUpdate (to be sent to n8n as part of formData):", optionsForMasterUpdate, " ---");
-    // --- 새로운 옵션 값 식별 로직 종료 ---
-
+    // --- "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별하여, n8n 전송 데이터에 조건부로 추가 ---
     const formDataForN8n = {
         // 로그용 필드들 (getValueOrN을 통해 소문자화된 값 또는 'n')
         page_url: document.getElementById('page_url').value.trim(),
@@ -742,15 +692,56 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         utm_content_combined: document.getElementById('utm_content').value.trim(), 
         
         final_url: document.getElementById('final_url').value.trim(),
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
         
-        // "옵션 마스터 시트"에 추가할 새 옵션 객체 (이전의 new_options_for_master_list 배열 대신)
-        // 예: { add_master_source: '새로운Source', add_master_ad_type: '새로운Adtype' }
-        // 이 객체는 새로운 옵션이 있을 때만 해당 키-값 쌍을 가집니다.
-        options_to_add_to_master_sheet: optionsForMasterUpdate 
+        // new_options_for_master_list는 더 이상 여기서 직접 만들지 않고,
+        // 대신 아래에서 각 파라미터가 새로운 경우에만 formDataForN8n에 해당 키를 추가합니다.
     };
 
-    console.log("Submitting Form Data to n8n:", formDataForN8n);
+    console.log("--- Identifying new options for master list (Submit Event) & Modifying formDataForN8n ---");
+    for (const baseId of dropdownBaseIds) { 
+        const hiddenInputElement = document.getElementById(baseId); 
+        const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
+
+        if (hiddenInputElement && selectedValueDisplayElement) {
+            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); 
+
+            // console.log(`\n[Submit Check - <span class="math-inline">\{baseId\}\] Current Display Text\: '</span>{selectedValueDisplayText}'`);
+            
+            if (selectedValueDisplayText && selectedValueDisplayText !== "N" && selectedValueDisplayText !== "-- 선택하세요 --") {
+                const masterListForThisCategory = masterOptionLists[baseId] || new Set();
+                // console.log(`[Submit Check - ${baseId}] Master list for comparison:`, Array.from(masterListForThisCategory));
+                
+                let isNewForMaster = true; 
+                const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
+                // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Lowercased Selected for comparison\: '</span>{lowercasedSelectedDisplayText}'`);
+
+                if (masterListForThisCategory.size > 0) {
+                    for (const masterOption of masterListForThisCategory) {
+                        const lowercasedMasterOption = String(masterOption).trim().toLowerCase();
+                        if (lowercasedMasterOption === lowercasedSelectedDisplayText) {
+                            isNewForMaster = false; 
+                            // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] Match found\! '</span>{selectedValueDisplayText}' is NOT new.`);
+                            break;
+                        }
+                    }
+                }
+                
+                if (isNewForMaster) {
+                    // 새로운 값일 경우, 해당 파라미터 키에 원본 대소문자 값을 할당하여 n8n으로 보냄
+                    // n8n은 이 키들이 존재하면 "옵션 마스터 시트"에 추가하는 로직을 수행
+                    // 키 이름은 "add_master_source", "add_master_medium" 등과 같이 명확하게 구분합니다.
+                    formDataForN8n[`add_master_${baseId}`] = selectedValueDisplayText; 
+                    console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' IS new. Will be sent as 'add_master_${baseId}'.`);
+                } else {
+                    // console.log(`[Submit Check - <span class="math-inline">\{baseId\}\] '</span>{selectedValueDisplayText}' already exists in master list. Not sending for master update.`);
+                }
+            }
+        }
+    }
+    console.log("--- 최종 formDataForN8n (to be sent to n8n):", formDataForN8n, " ---");
+    // --- 새로운 옵션 값 식별 및 formDataForN8n에 추가 로직 종료 ---
+
 
     try {
         const n8nUrl = N8N_WEBHOOK_URL; 
