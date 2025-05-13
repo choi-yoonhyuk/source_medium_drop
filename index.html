@@ -791,6 +791,8 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         document.getElementById("responseContainer").style.display = "none";
     } finally {
         hideLoading();
+        // 강제 새로고침
+        location.reload(); 
     }
 });
 </script>
