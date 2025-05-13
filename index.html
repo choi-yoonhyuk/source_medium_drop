@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UTM 링크 생성기 (n8n 연동 - localStorage 키 단순화)</title>
+<title>UTM 링크 생성기 (n8n 연동 - 최종 로직 적용)</title>
 <style>
 /* 기본 스타일 - 사용자님 코드 유지 */
 body { font-family: sans-serif; padding: 20px; font-size: 14px; }
@@ -197,9 +197,9 @@ legend { font-weight: bold; }
 
 <script>
 // --- 설정값 ---
-// const LS_KEY_PREFIX = 'utmGenerator_standalone_'; // 키 이름 직접 사용으로 변경되어 이 상수는 제거
+// const LS_KEY_PREFIX = 'utmGenerator_standalone_'; // 더 이상 사용하지 않음
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv';
-const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 사용자 실제 n8n URL로 변경 필수!
+const N8N_WEBHOOK_URL = '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요'; // <-- 사용자 실제 n8n URL로 변경 필수!
 const HISTORY_JSON_URL = 'https://raw.githubusercontent.com/choi-yoonhyuk/source_medium_drop/main/n8n-builder.json'; 
 
 const dropdownBaseIds = [
@@ -307,7 +307,7 @@ function parseAndStoreMasterOptions(csvDataText) {
                 const columns = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
                 if (columns.length > columnIndex) {
                     const value = String(columns[columnIndex]).trim();
-                    if (value) { 
+                    if (value && value.toLowerCase() !== 'undefined') { // "undefined" 문자열은 마스터 옵션으로 추가 안 함
                         optionsForThisCategory.add(value); 
                     }
                 }
@@ -391,10 +391,9 @@ function saveCustomOptionsToStorage(baseId) {
         console.log(`[saveCustomOptionsToStorage] Saved custom options for [${baseId}] to localStorage with key [${storageKey}]:`, customValues);
     } catch (e) {
         console.error(`[saveCustomOptionsToStorage] Error saving to localStorage for ${baseId} with key [${storageKey}]:`, e);
-        alert("로컬 스토리지에 옵션을 저장하는 중 오류가 발생했습니다. 브라우저 설정에서 로컬 스토리지가 허용되어 있는지 확인해주세요.");
+        // alert("로컬 스토리지에 옵션을 저장하는 중 오류가 발생했습니다. 브라우저 설정에서 로컬 스토리지가 허용되어 있는지 확인해주세요.");
     }
 }
-
 
 function setupDropdownInteractions(baseId) {
     const dropdown = document.getElementById(`${baseId}_dropdown`);
@@ -445,6 +444,11 @@ function setupDropdownInteractions(baseId) {
             const lowerCaseNewValue = originalNewValue.toLowerCase(); 
 
             if (!originalNewValue) { alert('추가할 값을 입력해주세요.'); return; }
+            if (originalNewValue.toLowerCase() === 'undefined') { // "undefined" 문자열 입력 방지
+                alert("'undefined'라는 값은 옵션으로 추가할 수 없습니다.");
+                addInput.value = '';
+                return;
+            }
             if (/\s|&|\?|#|\.|\/|\\/.test(originalNewValue)) { alert("띄어쓰기 및 특수문자(&, ?, #, ., /, \\)는 사용할 수 없습니다."); return; }
             if (/[^a-z0-9_\-]/.test(lowerCaseNewValue)) { alert("Key 값(소문자로 변환된 값)은 영문 소문자, 숫자, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다."); return; }
             
@@ -456,7 +460,7 @@ function setupDropdownInteractions(baseId) {
             optionsList.insertBefore(newLi, addOptionButton);
             saveCustomOptionsToStorage(baseId); 
 
-            console.log(`새 옵션 '${originalNewValue}'은(는) 로컬 스토리지에만 저장되었습니다. 이 값이 중앙 마스터 목록(구글 시트 CSV)에 없다면, 다음 '제출' 시 n8n으로 전달되어 '옵션 마스터 시트'에 추가될 수 있습니다.`);
+            console.log(`새 옵션 '${originalNewValue}'은(는) 로컬 스토리지에만 저장되었습니다.`);
             
             selectedValueDiv.textContent = originalNewValue;
             hiddenInput.value = lowerCaseNewValue; 
@@ -491,14 +495,18 @@ document.addEventListener('click', (event) => {
 function getValueOrN(elementId) {
     const element = document.getElementById(elementId);
     let value = "";
-    if (element) {
+    if (element) { // text input 또는 hidden input
         value = element.value.trim(); 
     }
-    const selectedDisplayElement = document.getElementById(`${elementId}_selected_value`);
+    
+    const selectedDisplayElement = document.getElementById(`${elementId}_selected_value`); // 드롭다운의 경우에만 존재
     if (selectedDisplayElement && selectedDisplayElement.textContent.trim() === "-- 선택하세요 --") {
         return "n"; 
     }
-    return value === "" ? "n" : value.toLowerCase(); 
+    if (value === "" || value.toLowerCase() === "n") { // 직접 입력 필드가 비었거나, hidden input이 "n"이거나 비었으면
+        return "n";
+    }
+    return value.toLowerCase(); // 최종적으로 소문자화된 값 (또는 사용자가 직접 입력한 값의 소문자)
 }
 
 function updateFinalURL() {
@@ -518,14 +526,14 @@ function updateFinalURL() {
         campaignDate, adType, campaignGoal, eventType, 
         productCategory, adTarget, creativeType, deviceType
     ];
-    const utmCampaign = utmCampaignParts.map(part => (part === "n" || part === "") ? "N" : part).join("_");
+    const utmCampaign = utmCampaignParts.map(part => part === "n" ? "N" : part).join("_");
     document.getElementById("utm_campaign").value = utmCampaign;
 
     const contentAction = getValueOrN("content_action");
     const contentDetail = getValueOrN("content_detail"); 
     const contentVersion = getValueOrN("content_version"); 
     
-    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => (part === "n" || part === "") ? "N" : part);
+    const utmContentParts = [contentAction, contentDetail, contentVersion].map(part => part === "n" ? "N" : part);
     const utmContent = utmContentParts.every(part => part === "N") ? "N" : utmContentParts.join("_");
     document.getElementById("utm_content").value = utmContent;
     
@@ -545,7 +553,7 @@ function updateFinalURL() {
         params.push(`utm_campaign=${encodeURIComponent(utmCampaign)}`);
     }
     
-    const defaultContent = "N_N_N"; // contentAction, contentDetail, contentVersion 이 모두 N일 때
+    const defaultContent = "N_N_N"; 
     if (utmContent && utmContent !== "N" && utmContent !== defaultContent) { 
          params.push(`utm_content=${encodeURIComponent(utmContent)}`);
     }
@@ -624,8 +632,8 @@ async function renderHistoryTable() {
         row.insertCell().textContent = displayTimestamp;
         row.insertCell().textContent = item?.utm_source || (item?.formData?.utm_source) || 'N';
         row.insertCell().textContent = item?.utm_medium || (item?.formData?.utm_medium) || 'N';
-        row.insertCell().textContent = item?.utm_campaign_combined || (item?.formData?.utm_campaign_combined) || (item?.utm_campaign || (item?.formData?.utm_campaign)) || 'N';
-        row.insertCell().textContent = item?.utm_content_combined || (item?.formData?.utm_content_combined) || (item?.utm_content || (item?.formData?.utm_content)) || 'N';
+        row.insertCell().textContent = item?.utm_campaign_combined || (item?.formData?.utm_campaign_combined) || 'N';
+        row.insertCell().textContent = item?.utm_content_combined || (item?.formData?.utm_content_combined) || 'N';
         row.insertCell().textContent = item?.utm_term || (item?.formData?.utm_term) || 'N';
         
         const pageUrlCell = row.insertCell();
@@ -679,117 +687,102 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     ];
 
     for (let field of requiredFieldsCheck) {
-        let valueToCheck = getValueOrN(field.id); // getValueOrN은 소문자화된 값 또는 "n"을 반환
+        let valueToCheck = getValueOrN(field.id); 
         if (valueToCheck === "n") { 
             alert(`필수 항목 '${field.name}'을(를) 선택 또는 입력해주세요.`);
             hideLoading();
             const elementToFocus = document.getElementById(field.id);
-            if (document.getElementById(`${field.id}_dropdown`)) { // 드롭다운인 경우
+            if (document.getElementById(`${field.id}_dropdown`)) { 
                  document.getElementById(`${field.id}_selected_value`)?.click();
-            } else { // 일반 input text인 경우
+            } else {
                  elementToFocus?.focus();
             }
             return;
         }
     }
     
-    // 2. 최종 URL 및 조합된 캠페인/콘텐츠 값 업데이트
+    // 2. 최종 URL 및 조합된 캠페인/콘텐츠 값 업데이트 (getValueOrN이 소문자화된 값을 사용하므로 URL도 소문자 기반으로 생성됨)
     updateFinalURL(); 
 
-    // 3. "옵션 마스터 시트"에 없는 새로운 옵션 값들만 식별하여 n8n에 보낼 목록 생성
-    //    이 목록은 "옵션 마스터 시트" 업데이트 용도로만 사용됨
-    let optionsForMasterUpdate = {}; // 객체 형태로 변경 (예: { add_master_source: '새값', add_master_ad_type: '다른새값'})
-                                     // 이 객체는 새로운 값이 있을 때만 해당 키-값 쌍을 가짐
+    // 3. n8n으로 전송할 최종 데이터 객체 구성
+    const formDataForN8n = {
+        // (A) "UTM 빌드 로그 시트" 기록용 필드들 
+        //     (getValueOrN을 통해 소문자화된 값 또는 'n'을 가져오고, 'n'이 아니면 포함)
+        page_url: document.getElementById('page_url').value.trim(), // page_url은 원본 그대로
+        utm_campaign_combined: document.getElementById('utm_campaign').value.trim(), 
+        utm_content_combined: document.getElementById('utm_content').value.trim(), 
+        final_url: document.getElementById('final_url').value.trim(),
+        timestamp: new Date().toISOString()
+    };
 
+    // 로그용 개별 파라미터들: 값이 "n"이 아닐 때만 formDataForN8n에 추가
+    const parametersToLog = [
+        { id: 'source', keyForN8n: 'utm_source' }, { id: 'medium', keyForN8n: 'utm_medium' },
+        { id: 'campaign_date', keyForN8n: 'campaign_date' }, { id: 'ad_type', keyForN8n: 'ad_type' },
+        { id: 'campaign_goal', keyForN8n: 'campaign_goal' }, { id: 'event_type', keyForN8n: 'event_type' },
+        { id: 'product_category', keyForN8n: 'product_category' }, { id: 'ad_target', keyForN8n: 'ad_target' },
+        { id: 'creative_type', keyForN8n: 'creative_type' }, { id: 'device_type', keyForN8n: 'device_type' },
+        { id: 'content_action', keyForN8n: 'content_action' }, { id: 'content_detail', keyForN8n: 'content_detail' },
+        { id: 'content_version', keyForN8n: 'content_version' }, { id: 'utm_term', keyForN8n: 'utm_term' }
+    ];
+
+    for (const param of parametersToLog) {
+        const elementValue = getValueOrN(param.id); // 소문자화된 값 또는 "n"
+        if (elementValue !== "n") { 
+            formDataForN8n[param.keyForN8n] = elementValue;
+        }
+        // "n"인 경우 해당 키를 formDataForN8n에 아예 포함시키지 않음
+    }
+
+    // (B) "옵션 마스터 시트"에 추가할 새로운 옵션 값들만 식별하여 객체로 구성
+    const optionsForMasterUpdate = {}; 
     console.log("--- Identifying new options to add to master sheet (Submit Event) ---");
     for (const baseId of dropdownBaseIds) { 
-        const hiddenInputElement = document.getElementById(baseId); // 예: id="source"인 hidden input
-        const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`); // 예: id="source_selected_value"인 div
+        const hiddenInputElement = document.getElementById(baseId); 
+        const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
 
         if (hiddenInputElement && selectedValueDisplayElement) {
-            const selectedValueKey = hiddenInputElement.value.trim(); // hidden input에는 소문자화된 키 또는 빈 문자열/ "n"
             const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 화면에 표시된 원본 값 (대소문자 유지)
 
-            // 상세 디버깅 로그: 선택된 값과 마스터 리스트 상태 확인
-            console.log(`\n[Submit Check - ${baseId}] Current Display Text: '${selectedValueDisplayText}', Current Hidden Input Key: '${selectedValueKey}'`);
+            // 상세 디버깅 로그 활성화 원하시면 아래 주석 해제
+            // const selectedValueKeyDebug = hiddenInputElement.value.trim(); 
+            // console.log(`\n[Submit Check - ${baseId}] Current Display Text: '${selectedValueDisplayText}', Current Hidden Input Key: '${selectedValueKeyDebug}'`);
             
-            if (selectedValueDisplayText && selectedValueDisplayText !== "N" && selectedValueDisplayText !== "-- 선택하세요 --") {
+            if (selectedValueDisplayText && selectedValueDisplayText.toLowerCase() !== "n" && selectedValueDisplayText !== "-- 선택하세요 --" && selectedValueDisplayText.toLowerCase() !== "undefined") {
                 const masterListForThisCategory = masterOptionLists[baseId] || new Set();
-                console.log(`[Submit Check - ${baseId}] Master list from CSV (original case) for comparison:`, Array.from(masterListForThisCategory));
+                // console.log(`[Submit Check - ${baseId}] Master list from CSV (original case) for comparison:`, Array.from(masterListForThisCategory));
                 
                 let isNewForMaster = true; 
                 const lowercasedSelectedDisplayText = selectedValueDisplayText.toLowerCase();
-                console.log(`[Submit Check - ${baseId}] Lowercased Selected Display Text for comparison: '${lowercasedSelectedDisplayText}'`);
+                // console.log(`[Submit Check - ${baseId}] Lowercased Selected Display Text for comparison: '${lowercasedSelectedDisplayText}'`);
 
                 if (masterListForThisCategory.size > 0) {
                     for (const masterOption of masterListForThisCategory) {
                         const lowercasedMasterOption = String(masterOption).trim().toLowerCase();
-                        // console.log(`[Submit Check - ${baseId}] Comparing selected '${lowercasedSelectedDisplayText}' with master '${lowercasedMasterOption}'`); // 상세 비교 원하면 주석 해제
                         if (lowercasedMasterOption === lowercasedSelectedDisplayText) {
                             isNewForMaster = false; 
-                            console.log(`[Submit Check - ${baseId}] Match found! '${selectedValueDisplayText}' (lc: ${lowercasedSelectedDisplayText}) is NOT new. It exists as '${masterOption}' (lc: ${lowercasedMasterOption}) in master list.`);
+                            // console.log(`[Submit Check - ${baseId}] Match found! '${selectedValueDisplayText}' is NOT new.`);
                             break;
                         }
                     }
-                } else if (lowercasedSelectedDisplayText === "n") { 
-                    // 마스터 목록이 비어있고, 선택된 값이 "n"이면 새것으로 간주 안 함
-                    isNewForMaster = false;
-                    console.log(`[Submit Check - ${baseId}] Master list for this category is empty, and selected value implies 'not set' ('n'), so not considering it new.`);
                 }
-                // else: 마스터 목록 비었고, 선택값이 "n"이 아니면 isNewForMaster는 true 유지 (새것으로 간주)
+                // 마스터 목록이 비어있더라도, selectedValueDisplayText가 유효한 값이면 새것으로 간주 (단, "n"이나 "undefined"는 아님)
                 
                 if (isNewForMaster) {
-                    console.log(`[Submit Check - ${baseId}] '${selectedValueDisplayText}' IS new. Adding to optionsForMasterUpdate object with key 'add_master_${baseId}'.`);
-                    // n8n에서 이 키들이 존재하면 "옵션 마스터 시트"의 해당 열에 추가
-                    optionsForMasterUpdate[`add_master_${baseId}`] = selectedValueDisplayText; // 원본 대소문자 값
-                } else {
-                    console.log(`[Submit Check - ${baseId}] '${selectedValueDisplayText}' already exists in master list (case-insensitive). Not adding for master update.`);
+                    // console.log(`[Submit Check - ${baseId}] '${selectedValueDisplayText}' IS new. Adding to optionsForMasterUpdate object with key 'add_master_${baseId}'.`);
+                    optionsForMasterUpdate[`add_master_${baseId}`] = selectedValueDisplayText; 
                 }
-            } else {
-                 console.log(`[Submit Check - ${baseId}] Skipped (Value is 'N', '-- 선택하세요 --', or empty display text).`);
             }
-        } else {
-             // console.warn(`[Submit Check - ${baseId}] Hidden input or display element not found for master option check.`);
         }
     }
-    console.log("--- 최종 optionsForMasterUpdate (to be sent to n8n as part of formData):", optionsForMasterUpdate, " ---");
+    // optionsForMasterUpdate 객체가 비어있지 않은 경우에만 formDataForN8n에 추가
+    if (Object.keys(optionsForMasterUpdate).length > 0) {
+        formDataForN8n.options_to_add_to_master_sheet = optionsForMasterUpdate;
+    }
+    console.log("--- 최종 formDataForN8n (to be sent to n8n):", formDataForN8n, " ---");
     
 
-    // 4. n8n으로 전송할 최종 데이터 객체 구성
-    const formDataForN8n = {
-        // (A) "UTM 빌드 로그 시트" 기록용 필드들 (getValueOrN을 통해 소문자화된 값 또는 'n')
-        page_url: document.getElementById('page_url').value.trim(),
-        utm_source: getValueOrN('source'), 
-        utm_medium: getValueOrN('medium'), 
-        campaign_date: getValueOrN('campaign_date'),
-        ad_type: getValueOrN('ad_type'),
-        campaign_goal: getValueOrN('campaign_goal'),
-        event_type: getValueOrN('event_type'),
-        product_category: getValueOrN('product_category'),
-        ad_target: getValueOrN('ad_target'),
-        creative_type: getValueOrN('creative_type'),
-        device_type: getValueOrN('device_type'),
-        content_action: getValueOrN('content_action'),
-        content_detail: getValueOrN('content_detail'),
-        content_version: getValueOrN('content_version'),
-        utm_term: getValueOrN('utm_term'),
-        
-        // 조합된 캠페인/콘텐츠 문자열 (대문자 'N' 포함 가능)
-        utm_campaign_combined: document.getElementById('utm_campaign').value.trim(), 
-        utm_content_combined: document.getElementById('utm_content').value.trim(), 
-        
-        final_url: document.getElementById('final_url').value.trim(),
-        timestamp: new Date().toISOString(),
-        
-        // (B) "옵션 마스터 시트"에 추가할 새 옵션 객체 (이전의 new_options_for_master_list 배열 대신)
-        // 예: { add_master_source: '새로운Source', add_master_ad_type: '새로운Adtype' }
-        // 이 객체는 새로운 옵션이 있을 때만 해당 키-값 쌍을 가집니다.
-        options_to_add_to_master: optionsForMasterUpdate // 키 이름 변경하여 명확화
-    };
-
-    console.log("Submitting Form Data to n8n:", formDataForN8n);
-
-    // 5. n8n으로 데이터 전송 및 응답 처리
+    // 4. n8n으로 데이터 전송 및 응답 처리
     try {
         const n8nUrl = N8N_WEBHOOK_URL; 
         if (!n8nUrl || n8nUrl === '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
@@ -797,7 +790,7 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
             if (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:') {
                 alertMessage = "경고: 현재 페이지는 HTTPS이나 n8n 웹훅은 HTTP 로컬호스트입니다. 실제 환경에서는 정상 동작하지 않을 수 있습니다.\n(혼합 콘텐츠 오류 발생 가능)\n";
             }
-            alertMessage += "\nUTM 링크가 생성되었습니다 (단축 및 이력/시트 저장 안됨):\n" + formDataForN8n.final_url;
+            alertMessage += "\nUTM 링크가 생성되었습니다 (단축 및 이력/시트 저장 안됨):\n" + (formDataForN8n.final_url || document.getElementById('final_url').value.trim());
             alert(alertMessage);
             document.getElementById("responseContainer").style.display = "none";
             hideLoading();
@@ -821,15 +814,15 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
             document.getElementById("shortUrlInput").value = result.short_url;
             document.getElementById("responseContainer").style.display = "block";
             await renderHistoryTable(); 
-            alert("UTM 링크 생성, 단축 및 시트 저장 요청 완료!\n최종 URL: " + formDataForN8n.final_url + "\n단축 URL: " + result.short_url);
+            alert("UTM 링크 생성, 단축 및 시트 저장 요청 완료!\n최종 URL: " + (formDataForN8n.final_url || document.getElementById('final_url').value.trim()) + "\n단축 URL: " + result.short_url);
         } else {
-            alert("단축 URL을 받아오지 못했습니다. n8n 워크플로우 응답을 확인하세요.\n(시트 저장은 시도되었을 수 있습니다)\n최종 URL: " + formDataForN8n.final_url);
+            alert("단축 URL을 받아오지 못했습니다. n8n 워크플로우 응답을 확인하세요.\n(시트 저장은 시도되었을 수 있습니다)\n최종 URL: " + (formDataForN8n.final_url || document.getElementById('final_url').value.trim()));
             document.getElementById("responseContainer").style.display = "none";
             await renderHistoryTable(); 
         }
     } catch (err) {
         console.error("n8n 전송 또는 처리 오류:", err);
-        alert(`서버 통신 또는 처리 중 오류가 발생했습니다: ${err.message}\n(UTM 링크는 생성되었으나 단축 및 이력/시트 저장은 실패했을 수 있습니다)\n최종 URL: ${formDataForN8n.final_url}`);
+        alert(`서버 통신 또는 처리 중 오류가 발생했습니다: ${err.message}\n(UTM 링크는 생성되었으나 단축 및 이력/시트 저장은 실패했을 수 있습니다)\n최종 URL: ${formDataForN8n.final_url || document.getElementById('final_url').value.trim()}`);
         document.getElementById("responseContainer").style.display = "none";
     } finally {
         hideLoading();
