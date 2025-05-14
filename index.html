@@ -356,7 +356,7 @@ function renderDropdownWithOptions(baseId) {
     });
 
     const storageKey = baseId; // LS_KEY_PREFIX 제거, baseId를 직접 키로 사용
-    const customValuesFromStorage = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    // const customValuesFromStorage = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
     customValuesFromStorage.forEach(originalValueFromStorage => {
         const valueTrimmed = String(originalValueFromStorage).trim();
@@ -395,7 +395,7 @@ function saveCustomOptionsToStorage(baseId) {
         }
     });
     try {
-        localStorage.setItem(storageKey, JSON.stringify(customValues));
+      //  localStorage.setItem(storageKey, JSON.stringify(customValues));
         console.log(`[saveCustomOptionsToStorage] Saved custom options for [${baseId}] to localStorage with key [${storageKey}]:`, customValues);
     } catch (e) {
         console.error(`[saveCustomOptionsToStorage] Error saving to localStorage for ${baseId} with key [${storageKey}]:`, e);
