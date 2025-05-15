@@ -1,13 +1,13 @@
 [
   {
-    "timestamp": "2025-05-15T07:34:10.589Z",
-    "page_url": "https://example.com",
-    "utm_source": "youtube",
-    "utm_medium": "display",
-    "utm_campaign_combined": "20250515_da_N_N_N_N_N_mo",
-    "utm_content_combined": "N",
+    "timestamp": "2025-05-15T07:46:50.790Z",
+    "utm_source": "instagram",
+    "utm_medium": "paid_social",
+    "utm_campaign_combined": "20250515_a1_traffic_pre_electronic_f_img_mo",
+    "utm_content_combined": "click_N_N",
     "utm_term": "undefined",
-    "final_url": "https://example.com?utm_source=youtube&utm_medium=display&utm_campaign=20250515_da_N_N_N_N_N_mo",
-    "short_url": ""
+    "page_url": "https://example.com",
+    "final_url": "https://example.com?utm_source=instagram&utm_medium=paid_social&utm_campaign=20250515_a1_traffic_pre_electronic_f_img_mo&utm_content=click_N_N",
+    "content": "[{\"timestamp\":\"2025-05-15T07:46:50.790Z\",\"utm_source\":\"instagram\",\"utm_medium\":\"paid_social\",\"utm_campaign_combined\":\"20250515_a1_traffic_pre_electronic_f_img_mo\",\"utm_content_combined\":\"click_N_N\",\"utm_term\":\"undefined\",\"page_url\":\"https://example.com\",\"final_url\":\"https://example.com?utm_source=instagram&utm_medium=paid_social&utm_campaign=20250515_a1_traffic_pre_electronic_f_img_mo&utm_content=click_N_N\"}]"
   }
 ]
