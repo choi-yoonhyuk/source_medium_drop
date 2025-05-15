@@ -1,1 +1,13 @@
-[{"timestamp":"2025-05-15T06:57:47.627Z","utm_source":"google","utm_medium":"cpc","utm_campaign_combined":"20250203_sa_N_N_N_N_N_mo","utm_content_combined":"click_N_N","utm_term":"undefined","page_url":"https://example.com","final_url":"https://example.com?utm_source=google&utm_medium=cpc&utm_campaign=20250203_sa_N_N_N_N_N_mo&utm_content=click_N_N"}]
+[
+  {
+    "timestamp": "2025-05-15T06:57:47.627Z",
+    "page_url": "https://example.com",
+    "utm_source": "google",
+    "utm_medium": "cpc",
+    "utm_campaign_combined": "20250203_sa_N_N_N_N_N_mo",
+    "utm_content_combined": "click_N_N",
+    "utm_term": "undefined",
+    "final_url": "https://example.com?utm_source=google&utm_medium=cpc&utm_campaign=20250203_sa_N_N_N_N_N_mo&utm_content=click_N_N",
+    "short_url": ""
+  }
+]
