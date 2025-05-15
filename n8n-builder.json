@@ -1,16 +1,1 @@
-<<<<<<< HEAD
-[
-    {
-      "timestamp": "2024-05-15T12:30:00.000Z", 
-      "page_url": "https://example.com/product/1",
-      "utm_source": "google",
-      "utm_medium": "cpc",
-      "utm_campaign_combined": "20240515_sale_summer_promo", 
-      "utm_content_combined": "banner_A_v1",              
-      "utm_term": "running_shoes",
-      "final_url": "https://example.com/product/1?utm_source=google&utm_medium=cpc&utm_campaign=20240515_sale_summer_promo&utm_content=banner_A_v1&utm_term=running_shoes"
-    }
-]
-=======
-[{"created_at":"2025-05-15T06:17:33.799Z","utm_source":"newsletter","utm_medium":"display","utm_campaign":"20250203_sa_N_N_N_N_N_mo","utm_content":"click_N_N","utm_term":"undefined","page_url":"https://example.com","final_url":"https://example.com?utm_source=newsletter&utm_medium=display&utm_campaign=20250203_sa_N_N_N_N_N_mo&utm_content=click_N_N"}]
->>>>>>> 5814ff0369567979e53cabac0582eaa31a6a84d4
+[{"created_at":"2025-05-15T06:43:05.456Z","utm_source":"youtube","utm_medium":"display","utm_campaign":"20250203_da_N_N_N_N_N_mo","utm_content":"click_N_N","utm_term":"undefined","page_url":"https://example.com","final_url":"https://example.com?utm_source=youtube&utm_medium=display&utm_campaign=20250203_da_N_N_N_N_N_mo&utm_content=click_N_N"}]
