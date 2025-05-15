@@ -207,7 +207,7 @@ legend { font-weight: bold; }
 // --- 설정값 ---
 // const LS_KEY_PREFIX = 'utmGenerator_standalone_'; // 더 이상 사용하지 않음
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv';
-const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 사용자 실제 n8n URL로 변경 필수!
+const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 사용자 실제 n8n URL로 변경 필수!
 const HISTORY_JSON_URL = 'https://raw.githubusercontent.com/choi-yoonhyuk/source_medium_drop/main/n8n-builder.json'; 
 
 const dropdownBaseIds = [
@@ -793,7 +793,7 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     // 4. n8n으로 데이터 전송 및 응답 처리
     try {
         const n8nUrl = N8N_WEBHOOK_URL; 
-        if (!n8nUrl || n8nUrl === 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
+        if (!n8nUrl || n8nUrl === '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
             let alertMessage = "n8n 웹훅 URL이 올바르게 설정되지 않았습니다.\n";
             if (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:') {
                 alertMessage = "경고: 현재 페이지는 HTTPS이나 n8n 웹훅은 HTTP 로컬호스트입니다. 실제 환경에서는 정상 동작하지 않을 수 있습니다.\n(혼합 콘텐츠 오류 발생 가능)\n";
