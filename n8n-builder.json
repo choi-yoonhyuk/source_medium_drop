@@ -1,13 +1,13 @@
 [
   {
-    "timestamp": "2025-05-15T07:13:34.978Z",
+    "timestamp": "2025-05-15T07:16:26.353Z",
     "page_url": "https://example.com",
-    "utm_source": "google",
-    "utm_medium": "cpc",
-    "utm_campaign_combined": "20250203_sa_N_N_N_N_N_mo",
-    "utm_content_combined": "click_N_N",
+    "utm_source": "newsletter",
+    "utm_medium": "paid_social",
+    "utm_campaign_combined": "20250515_da_N_N_N_N_N_mo",
+    "utm_content_combined": "download_N_N",
     "utm_term": "undefined",
-    "final_url": "https://example.com?utm_source=google&utm_medium=cpc&utm_campaign=20250203_sa_N_N_N_N_N_mo&utm_content=click_N_N",
+    "final_url": "https://example.com?utm_source=newsletter&utm_medium=paid_social&utm_campaign=20250515_da_N_N_N_N_N_mo&utm_content=download_N_N",
     "short_url": ""
   }
 ]
