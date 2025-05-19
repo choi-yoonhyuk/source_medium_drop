@@ -210,7 +210,7 @@ legend { font-weight: bold; }
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1861589139&single=true&output=csv';
 const N8N_WEBHOOK_URL = 'https://entrench-consulting.app.n8n.cloud/webhook-test/15daaf64-30ee-4b32-9426-45a8c8bd9184'; // <-- 사용자 실제 n8n URL로 변경 필수!
 // const HISTORY_JSON_URL = 'https://raw.githubusercontent.com/choi-yoonhyuk/source_medium_drop/main/n8n-builder.json'; // 기존 JSON URL 주석 처리
-const GOOGLE_SHEET_HISTORY_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1831366188&single=true&output=csv'; // <-- 사용자님의 CSV URL을 넣어주세요!
+const GOOGLE_SHEET_HISTORY_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShcppno7HuVQbjoQzbaBMEvoBGt6atss9FI_-F3qSh_pzgtxw7A4NPo6Y2EYoll2y5_8wMt08X_oV0/pub?gid=1831366188&single=true&output=csv'; // 사용자가 제공한 히스토리 시트 URL
 
 
 const dropdownBaseIds = [
@@ -576,13 +576,12 @@ function updateFinalURL() {
     document.getElementById("final_url").value = finalURLGenerated;
 }
 
-async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다.
+async function fetchHistoryData() { 
     try {
         if (!GOOGLE_SHEET_HISTORY_CSV_URL || GOOGLE_SHEET_HISTORY_CSV_URL === '여기에_새로운_Google_Sheet_게시_CSV_URL_붙여넣기') {
             console.warn("Google Sheet 히스토리 CSV URL이 설정되지 않았습니다.");
             return [];
         }
-        // GOOGLE_SHEET_HISTORY_CSV_URL에서 CSV 데이터를 가져옵니다.
         const response = await fetch(GOOGLE_SHEET_HISTORY_CSV_URL);
         if (!response.ok) {
             console.warn(`히스토리 CSV(${GOOGLE_SHEET_HISTORY_CSV_URL}) 없음 또는 불러오기 실패:`, response.status, response.statusText);
@@ -594,9 +593,8 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
             return [];
         }
 
-        // CSV 텍스트를 파싱합니다.
         const lines = csvText.split(/\r?\n/);
-        if (lines.length < 2) { // 헤더 + 데이터 최소 1줄
+        if (lines.length < 2) { 
             console.warn("히스토리 CSV 데이터가 충분하지 않습니다 (헤더와 최소 1개의 데이터 행 필요).");
             return [];
         }
@@ -604,10 +602,8 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
         const historyArray = [];
 
-        // CSV 헤더와 예상되는 객체 키를 매핑합니다.
-        // Google Sheet의 컬럼 순서나 이름이 정확히 일치하지 않는 경우 이 부분을 조정해야 합니다.
-        const headerMap = {
-            timestamp: headers.indexOf('생성일시'), // Google Sheet에서 'timestamp' 컬럼명 사용 시
+        const headerMap = { // 사용자의 CSV 헤더에 맞게 수정된 부분
+            timestamp: headers.indexOf('생성일시'),
             utm_source: headers.indexOf('Source'),
             utm_medium: headers.indexOf('Medium'),
             utm_campaign_combined: headers.indexOf('Campaign'),
@@ -616,36 +612,29 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
             page_url: headers.indexOf('페이지 URL'),
             final_url: headers.indexOf('최종 URL'),
             short_url: headers.indexOf('단축 URL')
-            // 만약 CSV 헤더 이름이 다르다면, 예를 들어 CSV에 'source'라고 되어있다면 'utm_source: headers.indexOf('source')' 와 같이 수정
         };
 
-        // 모든 필수 헤더가 CSV에 존재하는지 확인
         for (const key in headerMap) {
             if (headerMap[key] === -1) {
-                console.warn(`히스토리 CSV에서 필수 헤더 '${key}' (또는 매핑된 CSV 헤더)를 찾을 수 없습니다. 현재 CSV 헤더: ${headers.join(', ')}`);
-                return []; // 하나의 헤더라도 없으면, 빈 배열을 반환
+                console.warn(`히스토리 CSV에서 필수 헤더 '${key}' (매핑된 CSV 헤더: '${Object.keys(headerMap).find(k => headerMap[k] === -1)}', 실제 CSV에서는 못찾음)를 찾을 수 없습니다. 현재 CSV 헤더: ${headers.join(', ')}`);
+                return []; 
             }
         }
 
         for (let i = 1; i < lines.length; i++) {
             const lineContent = lines[i].trim();
-            if (lineContent === '') continue; // 빈 줄은 건너뜀
+            if (lineContent === '') continue; 
 
             const columns = lineContent.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
             
-            // 데이터 행의 컬럼 수가 헤더 수보다 적으면 경고하고 건너뛸 수 있으나,
-            // 여기서는 일단 있는 만큼 데이터를 채우도록 시도합니다.
-            // Google Sheets CSV는 빈 셀이 있어도 쉼표는 유지하므로 columns.length는 헤더 수와 같을 것입니다.
-
             const entry = {};
             for (const key in headerMap) {
-                // 값이 없거나 "undefined" 문자열인 경우, 기본값 처리
                 let cellValue = columns[headerMap[key]];
                 if (cellValue === undefined || cellValue.toLowerCase() === 'undefined' || cellValue === '') {
                     if (key === 'utm_term' || key === 'short_url' || key === 'utm_content_combined') {
-                        cellValue = 'N'; // 혹은 'N/A'
+                        cellValue = 'N'; 
                     } else if (key === 'timestamp') {
-                        cellValue = new Date(0).toISOString(); // 유효하지 않은 날짜 대신 epoch 0
+                        cellValue = ''; // 빈 문자열로 처리하여 toLocaleString 에서 오류 방지 또는 유효한 날짜 문자열로 대체
                     } else {
                          cellValue = 'N';
                     }
@@ -655,15 +644,16 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
             historyArray.push(entry);
         }
 
-        // timestamp 기준으로 정렬 (최신순)
         return historyArray.sort((a, b) => {
-            const timeA = a.timestamp || 0;
-            const timeB = b.timestamp || 0;
+            const timeA = a.timestamp || '';
+            const timeB = b.timestamp || '';
+            // 날짜 문자열 형식에 따라 Date 객체 생성 방식 조정 필요 가능성 있음
+            // 예: 'YY. MM. DD. HH:mm' 형식이라면 new Date()가 직접 파싱하지 못할 수 있음
             const dateA = new Date(timeA);
             const dateB = new Date(timeB);
             const valA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0;
             const valB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
-            return valB - valA; // 최신이 위로
+            return valB - valA; 
         });
 
     } catch (error) {
@@ -672,7 +662,7 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
     }
 }
 
-async function renderHistoryTable() {
+async function renderHistoryTable() { // <<--- 이 함수가 수정되었습니다 (하이퍼링크 추가).
     const tableBody = document.getElementById('historyTable')?.getElementsByTagName('tbody')[0];
     if (!tableBody) { console.error("History table body (tbody) 요소를 찾을 수 없습니다!"); return; }
     tableBody.innerHTML = '';
@@ -699,18 +689,40 @@ async function renderHistoryTable() {
     historyData.forEach(item => {
         const row = tableBody.insertRow();
         let displayTimestamp = 'N/A';
-        // CSV에서 읽어온 item.timestamp는 문자열일 수 있으므로 Date 객체로 변환 시도
         const itemTimestamp = item?.timestamp;
+
         if (itemTimestamp) {
             try {
-                const dateObj = new Date(itemTimestamp);
-                if (!isNaN(dateObj.getTime())) { // 유효한 날짜인지 확인
+                // 'YY. MM. DD. 오후 H:MM' 같은 형식의 문자열을 new Date()가 직접 파싱하기 어려울 수 있음.
+                // CSV의 날짜/시간 형식이 JavaScript Date.parse() 또는 new Date() 생성자가
+                // 이해할 수 있는 표준 형식(예: YYYY-MM-DDTHH:mm:ssZ 또는 MM/DD/YYYY HH:mm)인지 확인 필요.
+                // 현재는 'ko-KR' 로캘 기본 파싱에 의존.
+                let dateObj;
+                // 예시: "24. 5. 17. 오후 1:45" 와 같은 형식이라면, 수동 파싱 또는 라이브러리 사용 고려.
+                // 간단한 ISO 유사 형식 변환 시도 (항상 동작 보장 안됨):
+                let parsableTimestamp = String(itemTimestamp).replace(/(\d{2})\. (\d{1,2})\. (\d{1,2})\. (오전|오후) (\d{1,2}):(\d{2})/, (match, yy, M, d, ap, h, m) => {
+                    let year = parseInt(yy, 10) + 2000;
+                    let month = parseInt(M, 10) -1; // 월은 0부터 시작
+                    let day = parseInt(d, 10);
+                    let hour = parseInt(h, 10);
+                    if (ap === '오후' && hour !== 12) hour += 12;
+                    if (ap === '오전' && hour === 12) hour = 0; // 자정
+                    return `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`;
+                });
+
+                dateObj = new Date(parsableTimestamp);
+                
+                if (!isNaN(dateObj.getTime())) {
                     displayTimestamp = dateObj.toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short'});
                 } else {
-                    // CSV에서 직접 'yy. MM. dd. HH:mm' 형태로 저장했다면 그대로 사용하거나, 여기서 파싱 시도
-                     displayTimestamp = itemTimestamp; // 또는 파싱 로직 추가
+                     // 파싱 실패 시 원본 값을 최대한 보여주거나 'N/A' 처리
+                    displayTimestamp = itemTimestamp || 'N/A';
+                    console.warn("Timestamp parsing failed for: ", itemTimestamp, ". Parsed as: ", parsableTimestamp);
                 }
-            } catch (e) { console.warn("Error parsing timestamp for history: ", itemTimestamp, e); displayTimestamp = itemTimestamp || 'N/A'; }
+            } catch (e) {
+                console.warn("Error parsing timestamp for history: ", itemTimestamp, e);
+                displayTimestamp = itemTimestamp || 'N/A';
+            }
         }
         
         row.insertCell().textContent = displayTimestamp;
@@ -720,22 +732,52 @@ async function renderHistoryTable() {
         row.insertCell().textContent = item?.utm_content_combined || 'N';
         row.insertCell().textContent = item?.utm_term || 'N';
         
+        // 페이지 URL 셀 (하이퍼링크)
         const pageUrlCell = row.insertCell();
-        const originalPageUrl = item?.page_url || '';
-        pageUrlCell.textContent = originalPageUrl;
-        pageUrlCell.title = originalPageUrl;
         pageUrlCell.style.cssText = 'max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        const originalPageUrl = item?.page_url || '';
+        if (originalPageUrl && (originalPageUrl.startsWith('http://') || originalPageUrl.startsWith('https://'))) {
+            const link = document.createElement('a');
+            link.href = originalPageUrl;
+            link.textContent = originalPageUrl;
+            link.target = '_blank';
+            link.title = originalPageUrl;
+            pageUrlCell.appendChild(link);
+        } else {
+            pageUrlCell.textContent = originalPageUrl || 'N/A';
+            if (originalPageUrl) pageUrlCell.title = originalPageUrl;
+        }
 
+        // 최종 URL 셀 (하이퍼링크)
         const finalUrlCell = row.insertCell();
-        const finalUrl = item?.final_url || '';
-        finalUrlCell.textContent = finalUrl;
-        finalUrlCell.title = finalUrl;
         finalUrlCell.style.cssText = 'max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        const finalUrl = item?.final_url || '';
+        if (finalUrl && (finalUrl.startsWith('http://') || finalUrl.startsWith('https://'))) {
+            const link = document.createElement('a');
+            link.href = finalUrl;
+            link.textContent = finalUrl;
+            link.target = '_blank';
+            link.title = finalUrl;
+            finalUrlCell.appendChild(link);
+        } else {
+            finalUrlCell.textContent = finalUrl || 'N/A';
+            if (finalUrl) finalUrlCell.title = finalUrl;
+        }
         
         const shortUrlCell = row.insertCell();
         const shortUrl = item?.short_url || '';
-        shortUrlCell.textContent = shortUrl || 'N/A';
-        shortUrlCell.title = shortUrl;
+        // 단축 URL도 링크로 만들고 싶다면 위와 유사하게 처리
+        if (shortUrl && (shortUrl.startsWith('http://') || shortUrl.startsWith('https://'))) {
+            const link = document.createElement('a');
+            link.href = shortUrl;
+            link.textContent = shortUrl;
+            link.target = '_blank';
+            link.title = shortUrl;
+            shortUrlCell.appendChild(link);
+        } else {
+            shortUrlCell.textContent = shortUrl || 'N/A';
+             if (shortUrl) shortUrlCell.title = shortUrl;
+        }
         shortUrlCell.style.cssText = 'max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
     });
 }
@@ -763,7 +805,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     showLoading("UTM 링크 생성 및 전송 중...");
 
-    // 1. 필수 항목 유효성 검사 (getValueOrN 사용)
     const requiredFieldsCheck = [
         { id: "page_url", name: "Page URL" }, { id: "source", name: "UTM Source" },
         { id: "medium", name: "UTM Medium" }, { id: "campaign_date", name: "날짜" },
@@ -785,21 +826,16 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         }
     }
     
-    // 2. 최종 URL 및 조합된 캠페인/콘텐츠 값 업데이트 (getValueOrN이 소문자화된 값을 사용하므로 URL도 소문자 기반으로 생성됨)
     updateFinalURL();
 
-    // 3. n8n으로 전송할 최종 데이터 객체 구성
     const formDataForN8n = {
-        // (A) "UTM 빌드 로그 시트" 기록용 필드들
-        //     (getValueOrN을 통해 소문자화된 값 또는 'n'을 가져오고, 'n'이 아니면 포함)
-        page_url: document.getElementById('page_url').value.trim(), // page_url은 원본 그대로
+        page_url: document.getElementById('page_url').value.trim(),
         utm_campaign_combined: document.getElementById('utm_campaign').value.trim(),
         utm_content_combined: document.getElementById('utm_content').value.trim(),
         final_url: document.getElementById('final_url').value.trim(),
         timestamp: new Date().toISOString()
     };
 
-    // 로그용 개별 파라미터들: 값이 "n"이 아닐 때만 formDataForN8n에 추가
     const parametersToLog = [
         { id: 'source', keyForN8n: 'utm_source' }, { id: 'medium', keyForN8n: 'utm_medium' },
         { id: 'campaign_date', keyForN8n: 'campaign_date' }, { id: 'ad_type', keyForN8n: 'ad_type' },
@@ -811,14 +847,12 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     ];
 
     for (const param of parametersToLog) {
-        const elementValue = getValueOrN(param.id); // 소문자화된 값 또는 "n"
+        const elementValue = getValueOrN(param.id); 
         if (elementValue !== "n") {
             formDataForN8n[param.keyForN8n] = elementValue;
         }
-        // "n"인 경우 해당 키를 formDataForN8n에 아예 포함시키지 않음
     }
 
-    // (B) "옵션 마스터 시트"에 추가할 새로운 옵션 값들만 식별하여 객체로 구성
     const optionsForMasterUpdate = {};
     console.log("--- Identifying new options to add to master sheet (Submit Event) ---");
     for (const baseId of dropdownBaseIds) {
@@ -826,7 +860,7 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         const selectedValueDisplayElement = document.getElementById(`${baseId}_selected_value`);
 
         if (hiddenInputElement && selectedValueDisplayElement) {
-            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); // 화면에 표시된 원본 값 (대소문자 유지)
+            const selectedValueDisplayText = selectedValueDisplayElement.textContent.trim(); 
             
             if (selectedValueDisplayText && selectedValueDisplayText.toLowerCase() !== "n" && selectedValueDisplayText !== "-- 선택하세요 --" && selectedValueDisplayText.toLowerCase() !== "undefined") {
                 const masterListForThisCategory = masterOptionLists[baseId] || new Set();
@@ -855,8 +889,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
     }
     console.log("--- 최종 formDataForN8n (to be sent to n8n):", formDataForN8n, " ---");
     
-
-    // 4. n8n으로 데이터 전송 및 응답 처리
     try {
         const n8nUrl = N8N_WEBHOOK_URL;
         if (!n8nUrl || n8nUrl === '여기에_N8N_WEBHOOK_PRODUCTION_URL_입력하세요' || (n8nUrl.startsWith('http://localhost') && window.location.protocol === 'https:')) {
@@ -887,12 +919,12 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         if (result.short_url) {
             document.getElementById("shortUrlInput").value = result.short_url;
             document.getElementById("responseContainer").style.display = "block";
-            await renderHistoryTable(); // 이력 다시 로드
+            await renderHistoryTable(); 
             alert("UTM 링크 생성, 단축 및 시트 저장 요청 완료!\n최종 URL: " + (formDataForN8n.final_url || document.getElementById('final_url').value.trim()) + "\n단축 URL: " + result.short_url);
         } else {
             alert("단축 URL을 받아오지 못했습니다. n8n 워크플로우 응답을 확인하세요.\n(시트 저장은 시도되었을 수 있습니다)\n최종 URL: " + (formDataForN8n.final_url || document.getElementById('final_url').value.trim()));
             document.getElementById("responseContainer").style.display = "none";
-            await renderHistoryTable(); // 이력 다시 로드
+            await renderHistoryTable(); 
         }
     } catch (err) {
         console.error("n8n 전송 또는 처리 오류:", err);
@@ -900,16 +932,6 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         document.getElementById("responseContainer").style.display = "none";
     } finally {
         hideLoading();
-        // 페이지를 새로고침하면 사용자가 입력한 내용이 초기화될 수 있습니다.
-        // UX에 따라 새로고침 여부를 결정하거나, 폼을 초기화하는 함수를 호출할 수 있습니다.
-        // location.reload(); // 기존 코드에서는 새로고침하고 있었음
-        // 일단 주석 처리하고, 필요시 활성화 또는 폼 초기화 로직으로 대체
-        
-        // 만약 n8n에서 Google Sheet를 업데이트하고, 그 결과를 바로 반영하고 싶다면,
-        // location.reload() 대신 renderHistoryTable()을 호출하여 이력만 갱신할 수 있습니다.
-        // 위 try...catch 블록의 success/error 부분에 이미 renderHistoryTable() 호출이 추가됨.
-        // 추가로, 폼 제출 후 입력 필드를 초기화하고 싶다면 별도 함수를 만들어 호출할 수 있습니다.
-        // e.g., clearFormInputs();
     }
 });
 </script>
