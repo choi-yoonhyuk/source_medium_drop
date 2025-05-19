@@ -607,15 +607,15 @@ async function fetchHistoryData() { // <<--- 이 함수가 수정되었습니다
         // CSV 헤더와 예상되는 객체 키를 매핑합니다.
         // Google Sheet의 컬럼 순서나 이름이 정확히 일치하지 않는 경우 이 부분을 조정해야 합니다.
         const headerMap = {
-            timestamp: headers.indexOf('timestamp'), // Google Sheet에서 'timestamp' 컬럼명 사용 시
-            utm_source: headers.indexOf('utm_source'),
-            utm_medium: headers.indexOf('utm_medium'),
-            utm_campaign_combined: headers.indexOf('utm_campaign_combined'),
-            utm_content_combined: headers.indexOf('utm_content_combined'),
-            utm_term: headers.indexOf('utm_term'),
-            page_url: headers.indexOf('page_url'),
-            final_url: headers.indexOf('final_url'),
-            short_url: headers.indexOf('short_url')
+            timestamp: headers.indexOf('생성일시'), // Google Sheet에서 'timestamp' 컬럼명 사용 시
+            utm_source: headers.indexOf('Source'),
+            utm_medium: headers.indexOf('Medium'),
+            utm_campaign_combined: headers.indexOf('Campaign'),
+            utm_content_combined: headers.indexOf('Content'),
+            utm_term: headers.indexOf('Term'),
+            page_url: headers.indexOf('페이지 URL'),
+            final_url: headers.indexOf('최종 URL'),
+            short_url: headers.indexOf('단축 URL')
             // 만약 CSV 헤더 이름이 다르다면, 예를 들어 CSV에 'source'라고 되어있다면 'utm_source: headers.indexOf('source')' 와 같이 수정
         };
 
