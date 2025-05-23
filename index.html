@@ -388,27 +388,27 @@ function renderDropdownWithOptions(baseId) {
     });
 
     const storageKey = baseId; // 로컬 스토리지 키도 긴 이름 사용
-    const customValuesFromStorage = JSON.parse(localStorage.getItem(storageKey) || '[]'); 
+   // const customValuesFromStorage = JSON.parse(localStorage.getItem(storageKey) || '[]'); 
     
-    customValuesFromStorage.forEach(originalValueFromStorage => {
-        const valueTrimmed = String(originalValueFromStorage).trim();
-        const lowerCaseValue = valueTrimmed.toLowerCase();
+    // customValuesFromStorage.forEach(originalValueFromStorage => {
+    //     const valueTrimmed = String(originalValueFromStorage).trim();
+    //     const lowerCaseValue = valueTrimmed.toLowerCase();
 
-        if (valueTrimmed && !allRenderedValuesLowerCase.has(lowerCaseValue)) {
-            let isInMasterListAlready = false;
-            defaultOptionsFromMaster.forEach(masterOpt => {
-                if (String(masterOpt).trim().toLowerCase() === lowerCaseValue) {
-                    isInMasterListAlready = true;
-                }
-            });
+    //     if (valueTrimmed && !allRenderedValuesLowerCase.has(lowerCaseValue)) {
+    //         let isInMasterListAlready = false;
+    //         defaultOptionsFromMaster.forEach(masterOpt => {
+    //             if (String(masterOpt).trim().toLowerCase() === lowerCaseValue) {
+    //                 isInMasterListAlready = true;
+    //             }
+    //         });
 
-            if (!isInMasterListAlready) {
-                const li = createOptionLi(lowerCaseValue, valueTrimmed, 'custom');
-                optionsList.insertBefore(li, addOptionButton);
-                allRenderedValuesLowerCase.add(lowerCaseValue);
-            }
-        }
-    });
+    //         if (!isInMasterListAlready) {
+    //             const li = createOptionLi(lowerCaseValue, valueTrimmed, 'custom');
+    //             optionsList.insertBefore(li, addOptionButton);
+    //             allRenderedValuesLowerCase.add(lowerCaseValue);
+    //         }
+    //     }
+    // });
 }
 
 function saveCustomOptionsToStorage(baseId) { // baseId는 긴 이름
@@ -427,7 +427,7 @@ function saveCustomOptionsToStorage(baseId) { // baseId는 긴 이름
         }
     });
     try {
-       localStorage.setItem(storageKey, JSON.stringify(customValues));
+  //     localStorage.setItem(storageKey, JSON.stringify(customValues));
         console.log(`[saveCustomOptionsToStorage] Saved custom options for [${baseId}] to localStorage with key [${storageKey}]:`, customValues);
     } catch (e) {
         console.error(`[saveCustomOptionsToStorage] Error saving to localStorage for ${baseId} with key [${storageKey}]:`, e);
