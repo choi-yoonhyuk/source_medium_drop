@@ -1031,6 +1031,7 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
         document.getElementById("responseContainer").style.display = "none";
     } finally {
         hideLoading();
+        location.reload();
     }
 });
 </script>
