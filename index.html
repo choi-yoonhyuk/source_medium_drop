@@ -69,7 +69,7 @@ legend { font-weight: bold; }
         <label for="page_url">Page URL <span class="required">(필수)</span>:</label>
         <input type="text" id="page_url" name="page_url_form" required placeholder="https://example.com" oninput="updateFinalURL()"><br><br>
 
-        <label for="source">UTM Source <span class="required">(필수)</span>:</label>
+        <label for="source">소스<span class="required">(필수)</span>:</label>
         <div class="custom-dropdown-container">
             <div class="custom-dropdown" id="source_dropdown">
                 <div class="dropdown-selected" id="source_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -84,7 +84,7 @@ legend { font-weight: bold; }
         </div>
         <br><br>
 
-        <label for="medium">UTM Medium <span class="required">(필수)</span>:</label>
+        <label for="medium">매체<span class="required">(필수)</span>:</label>
         <div class="custom-dropdown-container">
             <div class="custom-dropdown" id="medium_dropdown">
                 <div class="dropdown-selected" id="medium_selected_value" tabindex="0">-- 선택하세요 --</div>
@@ -751,7 +751,7 @@ async function renderHistoryTable() {
 
 
         if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
-    try {
+    try {ㅏ
         let dateObj;
         let parsableTimestamp = String(itemTimestamp).trim(); // 앞뒤 공백 
 
@@ -881,8 +881,8 @@ document.getElementById("utmForm").addEventListener("submit", async (e) => {
 
     const requiredFieldsCheck = [
         { id: "page_url", name: "Page URL" }, 
-        { id: "source", name: "UTM Source" }, // baseId가 'source' (짧은 이름)
-        { id: "medium", name: "UTM Medium" }, // baseId가 'medium' (짧은 이름)
+        { id: "source", name: "소스" }, // baseId가 'source' (짧은 이름)
+        { id: "medium", name: "매체" }, // baseId가 'medium' (짧은 이름)
         { id: "campaign_date", name: "날짜" },
         { id: "utm_campaign_ad_type", name: "광고타입" },     // baseId가 'utm_campaign_ad_type' (긴 이름)
         { id: "utm_campaign_device_type", name: "기기카테고리" } // baseId가 'utm_campaign_device_type' (긴 이름)
