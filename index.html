@@ -749,39 +749,6 @@ async function renderHistoryTable() {
         let displayTimestamp = 'N/A';
         const itemTimestamp = item?.timestamp;
 
-        // if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
-        //     try {
-        //         let dateObj;
-        //         let parsableTimestamp = String(itemTimestamp);
-        //         const kDateMatch = parsableTimestamp.match(/^(\d{2,4})\W?\s*(\d{1,2})\W?\s*(\d{1,2})\W?\s*(오전|오후)?\s*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
-
-        //         if (kDateMatch) {
-        //             let year = parseInt(kDateMatch[1], 10);
-        //             if (year < 100 && year >= 0) year += 2000; 
-        //             const month = parseInt(kDateMatch[2], 10) - 1; 
-        //             const day = parseInt(kDateMatch[3], 10);
-        //             const ampm = kDateMatch[4];
-        //             let hour = kDateMatch[5] ? parseInt(kDateMatch[5], 10) : 0;
-        //             const minute = kDateMatch[6] ? parseInt(kDateMatch[6], 10) : 0;
-
-        //             if (ampm === '오후' && hour >= 1 && hour < 12) hour += 12;
-        //             if (ampm === '오전' && hour === 12) hour = 0; 
-
-        //             parsableTimestamp = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`;
-        //         }
-        //         dateObj = new Date(parsableTimestamp);
-                
-        //         if (!isNaN(dateObj.getTime())) {
-        //             displayTimestamp = dateObj.toLocaleString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-        //         } else {
-        //             displayTimestamp = itemTimestamp; 
-        //             console.warn("Timestamp parsing failed for: ", itemTimestamp, ". Attempted with: ", parsableTimestamp);
-        //         }
-        //     } catch (e) {
-        //         console.warn("Error parsing timestamp for history: ", itemTimestamp, e);
-        //         displayTimestamp = itemTimestamp;
-        //     }
-        // }
 
         if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
     try {
