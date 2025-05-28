@@ -749,39 +749,106 @@ async function renderHistoryTable() {
         let displayTimestamp = 'N/A';
         const itemTimestamp = item?.timestamp;
 
-        if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
-            try {
-                let dateObj;
-                let parsableTimestamp = String(itemTimestamp);
-                const kDateMatch = parsableTimestamp.match(/^(\d{2,4})\W?\s*(\d{1,2})\W?\s*(\d{1,2})\W?\s*(오전|오후)?\s*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+        // if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
+        //     try {
+        //         let dateObj;
+        //         let parsableTimestamp = String(itemTimestamp);
+        //         const kDateMatch = parsableTimestamp.match(/^(\d{2,4})\W?\s*(\d{1,2})\W?\s*(\d{1,2})\W?\s*(오전|오후)?\s*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
 
-                if (kDateMatch) {
-                    let year = parseInt(kDateMatch[1], 10);
-                    if (year < 100 && year >= 0) year += 2000; 
-                    const month = parseInt(kDateMatch[2], 10) - 1; 
-                    const day = parseInt(kDateMatch[3], 10);
-                    const ampm = kDateMatch[4];
-                    let hour = kDateMatch[5] ? parseInt(kDateMatch[5], 10) : 0;
-                    const minute = kDateMatch[6] ? parseInt(kDateMatch[6], 10) : 0;
+        //         if (kDateMatch) {
+        //             let year = parseInt(kDateMatch[1], 10);
+        //             if (year < 100 && year >= 0) year += 2000; 
+        //             const month = parseInt(kDateMatch[2], 10) - 1; 
+        //             const day = parseInt(kDateMatch[3], 10);
+        //             const ampm = kDateMatch[4];
+        //             let hour = kDateMatch[5] ? parseInt(kDateMatch[5], 10) : 0;
+        //             const minute = kDateMatch[6] ? parseInt(kDateMatch[6], 10) : 0;
 
-                    if (ampm === '오후' && hour >= 1 && hour < 12) hour += 12;
-                    if (ampm === '오전' && hour === 12) hour = 0; 
+        //             if (ampm === '오후' && hour >= 1 && hour < 12) hour += 12;
+        //             if (ampm === '오전' && hour === 12) hour = 0; 
 
-                    parsableTimestamp = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`;
-                }
-                dateObj = new Date(parsableTimestamp);
+        //             parsableTimestamp = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00`;
+        //         }
+        //         dateObj = new Date(parsableTimestamp);
                 
-                if (!isNaN(dateObj.getTime())) {
-                    displayTimestamp = dateObj.toLocaleString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-                } else {
-                    displayTimestamp = itemTimestamp; 
-                    console.warn("Timestamp parsing failed for: ", itemTimestamp, ". Attempted with: ", parsableTimestamp);
+        //         if (!isNaN(dateObj.getTime())) {
+        //             displayTimestamp = dateObj.toLocaleString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+        //         } else {
+        //             displayTimestamp = itemTimestamp; 
+        //             console.warn("Timestamp parsing failed for: ", itemTimestamp, ". Attempted with: ", parsableTimestamp);
+        //         }
+        //     } catch (e) {
+        //         console.warn("Error parsing timestamp for history: ", itemTimestamp, e);
+        //         displayTimestamp = itemTimestamp;
+        //     }
+        // }
+
+        if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
+    try {
+        let dateObj;
+        let parsableTimestamp = String(itemTimestamp).trim(); // 앞뒤 공백 제거
+
+        // 1. ISO 8601 형식을 우선적으로 시도 (가장 표준적인 형식)
+        // 예: "2025-05-27T00:00:00Z", "2025-05-27T09:00:00+09:00"
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(parsableTimestamp)) {
+            dateObj = new Date(parsableTimestamp);
+        } else {
+            // 2. ISO 8601 형식이 아니라면, 기존의 한국어 형식 파싱 시도
+            const kDateMatch = parsableTimestamp.match(/^(\d{2,4})\W?\s*(\d{1,2})\W?\s*(\d{1,2})\W?\s*(오전|오후)?\s*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+
+            if (kDateMatch) {
+                let year = parseInt(kDateMatch[1], 10);
+                if (year < 100 && year >= 0) { // 두 자리 연도 처리
+                    year += (year > 50 ? 1900 : 2000); // 50 초과면 19xx, 아니면 20xx (상황에 맞게 조정)
                 }
-            } catch (e) {
-                console.warn("Error parsing timestamp for history: ", itemTimestamp, e);
-                displayTimestamp = itemTimestamp;
+                const month = parseInt(kDateMatch[2], 10) - 1; // JS 월은 0부터 시작
+                const day = parseInt(kDateMatch[3], 10);
+                const ampm = kDateMatch[4]; // "오전", "오후", 또는 undefined
+                let hour = kDateMatch[5] ? parseInt(kDateMatch[5], 10) : 0;
+                const minute = kDateMatch[6] ? parseInt(kDateMatch[6], 10) : 0;
+                const second = kDateMatch[7] ? parseInt(kDateMatch[7], 10) : 0; // 초도 고려
+
+                if (ampm) { // 오전/오후가 명시된 경우
+                    if (ampm === '오후' && hour >= 1 && hour < 12) { // 오후 1시 ~ 11시
+                        hour += 12;
+                    } else if (ampm === '오전' && hour === 12) { // 오전 12시 (자정)
+                        hour = 0;
+                    }
+                    // 오후 12시(정오)는 hour가 12이고 ampm이 '오후'이므로 첫 번째 조건에 안 걸리고 그대로 12시 유지 (정상)
+                }
+                // 오전/오후 명시 없이 24시간제로 들어올 수도 있음 (이 경우 ampm은 undefined)
+
+                // Date 객체 생성 시, JavaScript는 이 숫자들을 로컬 시간대로 해석합니다.
+                dateObj = new Date(year, month, day, hour, minute, second || 0);
+            } else {
+                // 위 두 형식 모두 아니면, 그냥 원본 문자열로 Date 객체 생성을 시도 (브라우저/JS 엔진의 자체 파싱 능력에 의존)
+                // 이 경우, 문자열이 표준적이지 않으면 결과가 부정확하거나 Invalid Date가 될 수 있습니다.
+                dateObj = new Date(parsableTimestamp);
             }
         }
+        
+        // 3. 생성된 Date 객체가 유효한지 확인
+        if (dateObj && !isNaN(dateObj.getTime())) {
+            // 4. 원하는 형식으로 한국 시간(KST)으로 표시
+            displayTimestamp = dateObj.toLocaleString('ko-KR', {
+                year: '2-digit',
+                month: 'numeric', // '2-digit'로 하면 항상 두 자리 (예: "05월")
+                day: 'numeric',   // '2-digit'로 하면 항상 두 자리 (예: "07일")
+                hour: 'numeric',  // '2-digit'
+                minute: 'numeric',// '2-digit'
+                hour12: true,     // 오전/오후 표시
+                timeZone: 'Asia/Seoul' // 명시적으로 한국 시간대로 지정 (선택 사항, 대부분 브라우저가 이미 한국 시간대)
+            });
+        } else {
+            displayTimestamp = itemTimestamp; // 파싱 실패 시 원본 값 사용
+            console.warn("Timestamp parsing failed for: ", itemTimestamp, ". Attempted with: ", parsableTimestamp, ". Resulting dateObj: ", dateObj);
+        }
+    } catch (e) {
+        console.warn("Error parsing timestamp for history: ", itemTimestamp, e);
+        displayTimestamp = itemTimestamp;
+    }
+}
+
         
         row.insertCell().textContent = displayTimestamp;
         row.insertCell().textContent = item?.utm_source || 'N';
