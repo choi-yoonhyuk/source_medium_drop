@@ -753,7 +753,7 @@ async function renderHistoryTable() {
         if (itemTimestamp && itemTimestamp !== 'N' && itemTimestamp !== '') {
     try {
         let dateObj;
-        let parsableTimestamp = String(itemTimestamp).trim(); // 앞뒤 공백 제거
+        let parsableTimestamp = String(itemTimestamp).trim(); // 앞뒤 공백 
 
         // 1. ISO 8601 형식을 우선적으로 시도 (가장 표준적인 형식)
         // 예: "2025-05-27T00:00:00Z", "2025-05-27T09:00:00+09:00"
